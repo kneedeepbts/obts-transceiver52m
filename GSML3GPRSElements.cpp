@@ -115,15 +115,15 @@ void L3IAPacketAssignment::setPacketUplinkAssignSingleBlock(unsigned TBFStarting
 	mChannelCodingCommand = 0;	// use CS-1; redundant
 }
 
-void L3IAPacketAssignment::setPacketUplinkAssignDynamic(unsigned TFI, unsigned CSNum, unsigned USF)
-{
-	mPacketAssignmentType = PacketUplinkAssignDynamic;
-	mTFIPresent = true;
-	mTFIAssignment = TFI;
-	mChannelCodingCommand = CSNum;	// CS-1, etc.
-	mUSFGranularity = 0;		// redundant.
-	mUSF = USF;
-}
+//void L3IAPacketAssignment::setPacketUplinkAssignDynamic(unsigned TFI, unsigned CSNum, unsigned USF)
+//{
+//	mPacketAssignmentType = PacketUplinkAssignDynamic;
+//	mTFIPresent = true;
+//	mTFIAssignment = TFI;
+//	mChannelCodingCommand = CSNum;	// CS-1, etc.
+//	mUSFGranularity = 0;		// redundant.
+//	mUSF = USF;
+//}
 
 void L3IAPacketAssignment::setPacketDownlinkAssign(
 	unsigned wTLLI, unsigned wTFI,unsigned wCSNum,
@@ -145,12 +145,12 @@ void L3IAPacketAssignment::setPacketPollTime(unsigned wTBFStartingTime)
 	mTBFStartingTime = wTBFStartingTime;
 }
 
-void L3IAPacketAssignment::setPacketUplinkAssignFixed()
-{
-	mPacketAssignmentType = PacketUplinkAssignFixed;
-	// unimplemented
-	assert(0);
-}
+//void L3IAPacketAssignment::setPacketUplinkAssignFixed()
+//{
+//	mPacketAssignmentType = PacketUplinkAssignFixed;
+//	// unimplemented
+//	assert(0);
+//}
 
 // We broadcast alpha in the SI13 message, but not gamma.
 // This gives us a chance to over-ride the alpha,gamma for an individual MS,

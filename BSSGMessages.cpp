@@ -525,6 +525,7 @@ void BSSGMsg::text(std::ostream&os) const
 	os << " BSPDUType="<<getPDUType() <<" size="<<size();
 }
 
+// FIXME: Not used, but causes compile failure.
 std::string BSSGMsg::briefDescription() const
 {
 	return BSPDUType::name(getPDUType());

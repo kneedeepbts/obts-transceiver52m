@@ -108,25 +108,25 @@ static unsigned createFakeRachRA(FakeRachType rachtype)
 	}
 }
 
-FakeRachType fakeRachTypeTranslate(const char *name)
-{
-	if (strcasestr(name,"tch")) return FakeRachTCH;
-	if (strcasestr(name,"sdcch")) return FakeRachSDCCH;
-	if (strcasestr(name,"lur")) return FakeRachLUR;
-	if (strcasestr(name,"gprs")) return FakeRachGPRS;
-	if (strcasestr(name,"pag")) return FakeRachAnswerToPaging;
-	LOG(ERR) <<"Unrecognized fake rach type: " <<name;
-	return FakeRachTCH;	// Make something up.
-}
+//FakeRachType fakeRachTypeTranslate(const char *name)
+//{
+//	if (strcasestr(name,"tch")) return FakeRachTCH;
+//	if (strcasestr(name,"sdcch")) return FakeRachSDCCH;
+//	if (strcasestr(name,"lur")) return FakeRachLUR;
+//	if (strcasestr(name,"gprs")) return FakeRachGPRS;
+//	if (strcasestr(name,"pag")) return FakeRachAnswerToPaging;
+//	LOG(ERR) <<"Unrecognized fake rach type: " <<name;
+//	return FakeRachTCH;	// Make something up.
+//}
 
 // Enqueue a fake rach of the specified type.  Used to test/exercise the CCCH code.
-void createFakeRach(FakeRachType rachtype)
-{
-	Time now = gBTS.time();
-	AccessGrantResponder(createFakeRachRA(rachtype),now,0,1,0);
-	//ChannelRequestRecord *req = new ChannelRequestRecord(createFakeRachRA(rachtype),now,0,1);
-	//gBTS.channelRequest(req);
-}
+//void createFakeRach(FakeRachType rachtype)
+//{
+//	Time now = gBTS.time();
+//	AccessGrantResponder(createFakeRachRA(rachtype),now,0,1,0);
+//	//ChannelRequestRecord *req = new ChannelRequestRecord(createFakeRachRA(rachtype),now,0,1);
+//	//gBTS.channelRequest(req);
+//}
 
 std::ostream& operator<<(std::ostream& os, const RachInfo &rach)
 {

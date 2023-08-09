@@ -88,23 +88,23 @@ void NeighborHistory::nhAddPoint(NCellPoint &npt, FrameNum now)
 	}
 }
 
-void ChannelHistory::chAddPoint(SCellPoint &spt, FrameNum now)
-{
-	LOG(DEBUG) << LOGVAR(spt.scpFrame) << LOGVAR(now);
-	ScopedLock lock(mSCellLock);
-	mSCellData.push_front(spt);
-    // FIXME: Bypassing the dumb config system...
-	//int maxlen = gConfig.GSM.Handover.History.Max;
-    int maxlen = 32;
-	while ((int)mSCellData.size() > maxlen) { mSCellData.pop_back(); }
-	// Throw away points that are too old.
-	int maxage = (1+maxlen) * 2*52;		// Each report requires 2 * 52-multiframes, 480ms.
-	while (mSCellData.size()) {
-		SCellPoint &bk = mSCellData.back();
-		if (FNDelta(now,bk.scpFrame) > maxage) { mSCellData.pop_back(); continue; }
-		break;
-	}
-}
+//void ChannelHistory::chAddPoint(SCellPoint &spt, FrameNum now)
+//{
+//	LOG(DEBUG) << LOGVAR(spt.scpFrame) << LOGVAR(now);
+//	ScopedLock lock(mSCellLock);
+//	mSCellData.push_front(spt);
+//    // FIXME: Bypassing the dumb config system...
+//	//int maxlen = gConfig.GSM.Handover.History.Max;
+//    int maxlen = 32;
+//	while ((int)mSCellData.size() > maxlen) { mSCellData.pop_back(); }
+//	// Throw away points that are too old.
+//	int maxage = (1+maxlen) * 2*52;		// Each report requires 2 * 52-multiframes, 480ms.
+//	while (mSCellData.size()) {
+//		SCellPoint &bk = mSCellData.back();
+//		if (FNDelta(now,bk.scpFrame) > maxage) { mSCellData.pop_back(); continue; }
+//		break;
+//	}
+//}
 
 // Find the neighbor with the highest RXLEV.
 // If none, the mValid in the result will be false.

@@ -29,9 +29,9 @@
 
 #include "BitVector.h"
 #include "ViterbiR204.h"
-#include <iostream>
-#include <stdio.h>
-#include <sstream>
+//#include <iostream>
+//#include <stdio.h>
+//#include <sstream>
 #include <string.h>
 
 using namespace std;
@@ -52,17 +52,17 @@ unsigned ViterbiBase::applyPoly(uint64_t val, uint64_t poly, unsigned order)
 	return sum & 0x01;
 }
 
-unsigned ViterbiBase::applyPoly(uint64_t val, uint64_t poly)
-{
-	uint64_t prod = val & poly;
-	prod = (prod ^ (prod >> 32));
-	prod = (prod ^ (prod >> 16));
-	prod = (prod ^ (prod >> 8));
-	prod = (prod ^ (prod >> 4));
-	prod = (prod ^ (prod >> 2));
-	prod = (prod ^ (prod >> 1));
-	return prod & 0x01;
-}
+//unsigned ViterbiBase::applyPoly(uint64_t val, uint64_t poly)
+//{
+//	uint64_t prod = val & poly;
+//	prod = (prod ^ (prod >> 32));
+//	prod = (prod ^ (prod >> 16));
+//	prod = (prod ^ (prod >> 8));
+//	prod = (prod ^ (prod >> 4));
+//	prod = (prod ^ (prod >> 2));
+//	prod = (prod ^ (prod >> 1));
+//	return prod & 0x01;
+//}
 
 
 

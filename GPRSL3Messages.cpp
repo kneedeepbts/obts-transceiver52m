@@ -634,11 +634,11 @@ static unsigned sMeanThroughputTable[sMeanThroughputTableSize] = {
 
 // Result is in Bytes/hour
 // 0 means best effort.
-unsigned SmQoS::getMeanThroughput()
-{
-	unsigned code = getMeanThroughputCode();
-	return code <= 18 ? sMeanThroughputTable[code] : 0;
-}
+//unsigned SmQoS::getMeanThroughput()
+//{
+//	unsigned code = getMeanThroughputCode();
+//	return code <= 18 ? sMeanThroughputTable[code] : 0;
+//}
 
 // We probably will not use this, just set 'best effort' using setMeanThroughputCode()
 void SmQoS::setMeanThroughput(unsigned bytepHour)	// KBytes/sec
@@ -670,18 +670,18 @@ void SmQoS::setMaxBitRate(unsigned kbitps, bool uplink)
 }
 
 // Return -1 if not defined.
-int SmQoS::getMaxBitRate(bool uplink)
-{
-	// The IE is variable sized and may not include these fields.
-	if (size() <= 6) {return -1;}
-	unsigned code = uplink ? getMaxBitRateUplinkCode() : getMaxBitRateDownlinkCode();
-	if (code == 0xff) { return 0; }
-	switch (code & 0xc0) {
-	case 0: return code;
-	case 0x40: return 64 + 8*(code & 0x3f);
-	default: return 576 + 64*(code & 0x3f);
-	}
-}
+//int SmQoS::getMaxBitRate(bool uplink)
+//{
+//	// The IE is variable sized and may not include these fields.
+//	if (size() <= 6) {return -1;}
+//	unsigned code = uplink ? getMaxBitRateUplinkCode() : getMaxBitRateDownlinkCode();
+//	if (code == 0xff) { return 0; }
+//	switch (code & 0xc0) {
+//	case 0: return code;
+//	case 0x40: return 64 + 8*(code & 0x3f);
+//	default: return 576 + 64*(code & 0x3f);
+//	}
+//}
 
 
 // 3GPP 24.008 10.5.6.5

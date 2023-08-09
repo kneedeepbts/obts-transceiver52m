@@ -14,9 +14,9 @@
 */
 #define LOG_GROUP LogGroup::SMS
 
-#include <stdint.h>
+//#include <stdint.h>
 #include <stdio.h>
-#include <cstdio>
+//#include <cstdio>
 
 #include "SMSMessages.h"
 #include "Timeval.h"

@@ -17,18 +17,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
+//#include <signal.h>
 
-#include <signal.h>
-#include <stdlib.h>
+//#include <signal.h>
+//#include <stdlib.h>
 
-#include <ortp/ortp.h>
+//#include <ortp/ortp.h>
 #include <ortp/telephonyevents.h>
 
 #include "SIPUtility.h"
 //#include <OpenBTSConfig.h>
 #include "Sockets.h"
-// #include <GSML3CommonElements.h> // (pat 3-2014) Take this out temporarily to avoid referencing gBTS from the SIP directory. 
+//#include <GSML3CommonElements.h> // (pat 3-2014) Take this out temporarily to avoid referencing gBTS from the SIP directory.
 
 //#include "md5.h"
 
@@ -406,13 +406,13 @@ const char * sipSkipPrefix1(const char* in)
 	return in;
 }
 
-string sipSkipPrefix(string in)
-{
-	if (0 == strncasecmp(in.c_str(),"sip:",4)) { return in.substr(4); }
-	else if (0 == strncasecmp(in.c_str(),"tel:",4)) { return in.substr(4); }
-	else if (0 == strncasecmp(in.c_str(),"sips:",5)) { return in.substr(5); }
-	return in;
-}
+//string sipSkipPrefix(string in)
+//{
+//	if (0 == strncasecmp(in.c_str(),"sip:",4)) { return in.substr(4); }
+//	else if (0 == strncasecmp(in.c_str(),"tel:",4)) { return in.substr(4); }
+//	else if (0 == strncasecmp(in.c_str(),"sips:",5)) { return in.substr(5); }
+//	return in;
+//}
 
 };	// namespace SIP
 

@@ -27,7 +27,7 @@
 #include "GSMConfig.h"
 #include "GSML1FEC.h"
 
-#include "Reporting.h"
+//#include "Reporting.h"
 
 #include <string>
 #include <string.h>
@@ -395,121 +395,121 @@ int ::ARFCNManager::sendCommand(const char*command)
 
 
 
-bool ::ARFCNManager::tune(int wARFCN)
-{
-	// convert ARFCN number to a frequency
-	unsigned rxFreq = uplinkFreqKHz(gBTS.band(),wARFCN);
-	unsigned txFreq = downlinkFreqKHz(gBTS.band(),wARFCN);
-	// tune rx
-	int status = sendCommand("RXTUNE",rxFreq);
-	if (status!=0) {
-		LOG(ALERT) << "RXTUNE("<<wARFCN<<") failed with status " << status;
-		return false;
-	}
-	// tune tx
-	status = sendCommand("TXTUNE",txFreq);
-	if (status!=0) {
-		LOG(ALERT) << "TXTUNE failed with status " << status;
-		return false;
-	}
-	// done
-	mARFCN=wARFCN;
-	return true;
-}
+//bool ::ARFCNManager::tune(int wARFCN)
+//{
+//	// convert ARFCN number to a frequency
+//	unsigned rxFreq = uplinkFreqKHz(gBTS.band(),wARFCN);
+//	unsigned txFreq = downlinkFreqKHz(gBTS.band(),wARFCN);
+//	// tune rx
+//	int status = sendCommand("RXTUNE",rxFreq);
+//	if (status!=0) {
+//		LOG(ALERT) << "RXTUNE("<<wARFCN<<") failed with status " << status;
+//		return false;
+//	}
+//	// tune tx
+//	status = sendCommand("TXTUNE",txFreq);
+//	if (status!=0) {
+//		LOG(ALERT) << "TXTUNE failed with status " << status;
+//		return false;
+//	}
+//	// done
+//	mARFCN=wARFCN;
+//	return true;
+//}
 
 
 
-bool ::ARFCNManager::tuneLoopback(int wARFCN)
-{
-	// convert ARFCN number to a frequency
-	unsigned txFreq = downlinkFreqKHz(gBTS.band(),wARFCN);
-	// tune rx
-	int status = sendCommand("RXTUNE",txFreq);
-	if (status!=0) {
-		LOG(ALERT) << "RXTUNE failed with status " << status;
-		return false;
-	}
-	// tune tx
-	status = sendCommand("TXTUNE",txFreq);
-	if (status!=0) {
-		LOG(ALERT) << "TXTUNE failed with status " << status;
-		return false;
-	}
-	// done
-	mARFCN=wARFCN;
-	return true;
-}
+//bool ::ARFCNManager::tuneLoopback(int wARFCN)
+//{
+//	// convert ARFCN number to a frequency
+//	unsigned txFreq = downlinkFreqKHz(gBTS.band(),wARFCN);
+//	// tune rx
+//	int status = sendCommand("RXTUNE",txFreq);
+//	if (status!=0) {
+//		LOG(ALERT) << "RXTUNE failed with status " << status;
+//		return false;
+//	}
+//	// tune tx
+//	status = sendCommand("TXTUNE",txFreq);
+//	if (status!=0) {
+//		LOG(ALERT) << "TXTUNE failed with status " << status;
+//		return false;
+//	}
+//	// done
+//	mARFCN=wARFCN;
+//	return true;
+//}
 
 
-bool ::ARFCNManager::powerOff()
-{
-	int status = sendCommand("POWEROFF");
-	if (status!=0) {
-		LOG(INFO) << "POWEROFF failed with status " << status;
-		return false;
-	}
-	return true;
-}
+//bool ::ARFCNManager::powerOff()
+//{
+//	int status = sendCommand("POWEROFF");
+//	if (status!=0) {
+//		LOG(INFO) << "POWEROFF failed with status " << status;
+//		return false;
+//	}
+//	return true;
+//}
 
 
-bool ::ARFCNManager::powerOn(bool warn)
-{
-	int status = sendCommand("POWERON");
-	if (status!=0) {
-		if (warn) {
-			LOG(ALERT) << "POWERON failed with status " << status;
-		} else {
-			LOG(INFO) << "POWERON failed with status " << status;
-		}
-		
-		return false;
-	}
-	return true;
-}
+//bool ::ARFCNManager::powerOn(bool warn)
+//{
+//	int status = sendCommand("POWERON");
+//	if (status!=0) {
+//		if (warn) {
+//			LOG(ALERT) << "POWERON failed with status " << status;
+//		} else {
+//			LOG(INFO) << "POWERON failed with status " << status;
+//		}
+//
+//		return false;
+//	}
+//	return true;
+//}
 
-bool ::ARFCNManager::trxRunning()
-{
-	int status = sendCommand("POWEROFF");
-	return status == 0;
-}
-
-
+//bool ::ARFCNManager::trxRunning()
+//{
+//	int status = sendCommand("POWEROFF");
+//	return status == 0;
+//}
 
 
 
-bool ::ARFCNManager::setPower(int dB)
-{
-	int status = sendCommand("SETPOWER",dB);
-	if (status!=0) {
-		LOG(ALERT) << "SETPOWER failed with status " << status;
-		return false;
-	}
-	return true;
-}
 
 
-bool ::ARFCNManager::setTSC(unsigned TSC) 
-{
-	assert(TSC<8);
-	int status = sendCommand("SETTSC",TSC);
-	if (status!=0) {
-		LOG(ALERT) << "SETTSC failed with status " << status;
-		return false;
-	}
-	return true;
-}
+//bool ::ARFCNManager::setPower(int dB)
+//{
+//	int status = sendCommand("SETPOWER",dB);
+//	if (status!=0) {
+//		LOG(ALERT) << "SETPOWER failed with status " << status;
+//		return false;
+//	}
+//	return true;
+//}
 
 
-bool ::ARFCNManager::setBSIC(unsigned BSIC)
-{
-	assert(BSIC < 64);
-	int status = sendCommand("SETBSIC",BSIC);
-	if (status!=0) {
-		LOG(ALERT) << "SETBSIC failed with status " << status;
-		return false;
-	}
-	return true;
-}
+//bool ::ARFCNManager::setTSC(unsigned TSC)
+//{
+//	assert(TSC<8);
+//	int status = sendCommand("SETTSC",TSC);
+//	if (status!=0) {
+//		LOG(ALERT) << "SETTSC failed with status " << status;
+//		return false;
+//	}
+//	return true;
+//}
+
+
+//bool ::ARFCNManager::setBSIC(unsigned BSIC)
+//{
+//	assert(BSIC < 64);
+//	int status = sendCommand("SETBSIC",BSIC);
+//	if (status!=0) {
+//		LOG(ALERT) << "SETBSIC failed with status " << status;
+//		return false;
+//	}
+//	return true;
+//}
 
 
 bool ::ARFCNManager::setSlot(unsigned TN, unsigned combination)
@@ -527,26 +527,26 @@ bool ::ARFCNManager::setSlot(unsigned TN, unsigned combination)
 	return true;
 }
 
-bool ::ARFCNManager::setMaxDelay(unsigned km)
-{
-        int status = sendCommand("SETMAXDLY",km);
-        if (status!=0) {
-                LOG(ALERT) << "SETMAXDLY failed with status " << status;
-                return false;
-        }
-        return true;
-}
+//bool ::ARFCNManager::setMaxDelay(unsigned km)
+//{
+//        int status = sendCommand("SETMAXDLY",km);
+//        if (status!=0) {
+//                LOG(ALERT) << "SETMAXDLY failed with status " << status;
+//                return false;
+//        }
+//        return true;
+//}
 
-signed ::ARFCNManager::setRxGain(signed rxGain)
-{
-        signed newRxGain;
-        int status = sendCommand("SETRXGAIN",rxGain,&newRxGain);
-        if (status!=0) {
-                LOG(ALERT) << "SETRXGAIN failed with status " << status;
-                return false;
-        }
-        return newRxGain;
-}
+//signed ::ARFCNManager::setRxGain(signed rxGain)
+//{
+//        signed newRxGain;
+//        int status = sendCommand("SETRXGAIN",rxGain,&newRxGain);
+//        if (status!=0) {
+//                LOG(ALERT) << "SETRXGAIN failed with status " << status;
+//                return false;
+//        }
+//        return newRxGain;
+//}
 
 
 bool ::ARFCNManager::setHandover(unsigned TN)
@@ -573,27 +573,27 @@ bool ::ARFCNManager::clearHandover(unsigned TN)
 }
 
 
-signed ::ARFCNManager::setTxAtten(signed txAtten)
-{
-        signed newTxAtten;
-        int status = sendCommand("SETTXATTEN",txAtten,&newTxAtten);
-        if (status!=0) {
-                LOG(ALERT) << "SETTXATTEN failed with status " << status;
-                return false;
-        }
-        return newTxAtten;
-}
+//signed ::ARFCNManager::setTxAtten(signed txAtten)
+//{
+//        signed newTxAtten;
+//        int status = sendCommand("SETTXATTEN",txAtten,&newTxAtten);
+//        if (status!=0) {
+//                LOG(ALERT) << "SETTXATTEN failed with status " << status;
+//                return false;
+//        }
+//        return newTxAtten;
+//}
 
-signed ::ARFCNManager::setFreqOffset(signed offset)
-{
-        signed newFreqOffset;
-        int status = sendCommand("SETFREQOFFSET",offset,&newFreqOffset);
-        if (status!=0) {
-                LOG(ALERT) << "SETFREQOFFSET failed with status " << status;
-                return false;
-        }
-        return newFreqOffset;
-}
+//signed ::ARFCNManager::setFreqOffset(signed offset)
+//{
+//        signed newFreqOffset;
+//        int status = sendCommand("SETFREQOFFSET",offset,&newFreqOffset);
+//        if (status!=0) {
+//                LOG(ALERT) << "SETFREQOFFSET failed with status " << status;
+//                return false;
+//        }
+//        return newFreqOffset;
+//}
 
 
 signed ::ARFCNManager::getNoiseLevel(void)
@@ -607,16 +607,16 @@ signed ::ARFCNManager::getNoiseLevel(void)
         return noiselevel;
 }
 
-signed ::ARFCNManager::getFactoryCalibration(const char * param)
-{
-	signed value;
-	int status = sendCommand("READFACTORY", param, &value);
-	if (status!=0) {
-		LOG(INFO) << "READFACTORY failed with status " << status;
-		return false;
-	}
-	return value;
-}
+//signed ::ARFCNManager::getFactoryCalibration(const char * param)
+//{
+//	signed value;
+//	int status = sendCommand("READFACTORY", param, &value);
+//	if (status!=0) {
+//		LOG(INFO) << "READFACTORY failed with status " << status;
+//		return false;
+//	}
+//	return value;
+//}
 
 void ::ARFCNManager::receiveBurst(const RxBurst& inBurst)
 {

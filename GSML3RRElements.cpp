@@ -125,38 +125,38 @@ L3ControlChannelDescription::L3ControlChannelDescription()
 }
 
 
-void L3ControlChannelDescription::validate()
-{
-	if (mBS_PA_MFRMS != RN_BOUND(mBS_PA_MFRMS,2,9)) {
-		LOG(ERR) << "Invalid BS_PA_MFRMS value, must be 2..9";
-		mBS_PA_MFRMS = 2;	// If invalid, it is ok as long as we use the same value all the time.
-	}
-
-	switch (mCCCH_CONF) {
-	// Type 1 is the original beacon config used by Range.
-	case 1: 		// Timeslot C0 with 3 CCCH and 4 SDCCH.
-		if (mBS_AG_BLKS_RES != RN_BOUND(mBS_AG_BLKS_RES,0,2)) {
-			LOG(ERR) << "Invalid BS_AG_BLKS_RES value, must be 0..2";
-			mBS_AG_BLKS_RES = 7;
-		}
-		break;
-	default:
-		LOG(ERR) << "Invalid GSM.CCCH.CCCH-CONF value:"<<mCCCH_CONF <<" GPRS will fail until fixed";
-		mCCCH_CONF = 1;	
-		break;
-	}
-}
+//void L3ControlChannelDescription::validate()
+//{
+//	if (mBS_PA_MFRMS != RN_BOUND(mBS_PA_MFRMS,2,9)) {
+//		LOG(ERR) << "Invalid BS_PA_MFRMS value, must be 2..9";
+//		mBS_PA_MFRMS = 2;	// If invalid, it is ok as long as we use the same value all the time.
+//	}
+//
+//	switch (mCCCH_CONF) {
+//	// Type 1 is the original beacon config used by Range.
+//	case 1: 		// Timeslot C0 with 3 CCCH and 4 SDCCH.
+//		if (mBS_AG_BLKS_RES != RN_BOUND(mBS_AG_BLKS_RES,0,2)) {
+//			LOG(ERR) << "Invalid BS_AG_BLKS_RES value, must be 0..2";
+//			mBS_AG_BLKS_RES = 7;
+//		}
+//		break;
+//	default:
+//		LOG(ERR) << "Invalid GSM.CCCH.CCCH-CONF value:"<<mCCCH_CONF <<" GPRS will fail until fixed";
+//		mCCCH_CONF = 1;
+//		break;
+//	}
+//}
 
 // Return the BS_CC_CHANS variable.
-unsigned countBeaconTimeslots(int ccch_conf)
-{
-	switch (ccch_conf) {
-	default: return 1;
-	case 2: return 2; 		// Timeslots C0 and C2 with 9 CCCH apiece.
-	case 4: return 3; 		// Timeslots C0, C2, C4 with 9 CCCH apiece.
-	case 6: return 4; 		// Timeslots C0, C2, C4, C6 with 9 CCCH apiece.
-	}
-}
+//unsigned countBeaconTimeslots(int ccch_conf)
+//{
+//	switch (ccch_conf) {
+//	default: return 1;
+//	case 2: return 2; 		// Timeslots C0 and C2 with 9 CCCH apiece.
+//	case 4: return 3; 		// Timeslots C0, C2, C4 with 9 CCCH apiece.
+//	case 6: return 4; 		// Timeslots C0, C2, C4, C6 with 9 CCCH apiece.
+//	}
+//}
 
 
 
@@ -700,25 +700,25 @@ string L3MeasurementResults::text() const
 }
 
 
-unsigned L3MeasurementResults::RXLEV_NCELLs(unsigned * target) const
-{
-	for (unsigned i=0; i<mNO_NCELL; i++) target[i] = mRXLEV_NCELL[i];
-	return mNO_NCELL;
-}
+//unsigned L3MeasurementResults::RXLEV_NCELLs(unsigned * target) const
+//{
+//	for (unsigned i=0; i<mNO_NCELL; i++) target[i] = mRXLEV_NCELL[i];
+//	return mNO_NCELL;
+//}
 
 
-unsigned L3MeasurementResults::BCCH_FREQ_NCELLs(unsigned * target) const
-{
-	for (unsigned i=0; i<mNO_NCELL; i++) target[i] = mBCCH_FREQ_NCELL[i];
-	return mNO_NCELL;
-}
+//unsigned L3MeasurementResults::BCCH_FREQ_NCELLs(unsigned * target) const
+//{
+//	for (unsigned i=0; i<mNO_NCELL; i++) target[i] = mBCCH_FREQ_NCELL[i];
+//	return mNO_NCELL;
+//}
 
 
-unsigned L3MeasurementResults::BSIC_NCELLs(unsigned * target) const
-{
-	for (unsigned i=0; i<mNO_NCELL; i++) target[i] = mBSIC_NCELL[i];
-	return mNO_NCELL;
-}
+//unsigned L3MeasurementResults::BSIC_NCELLs(unsigned * target) const
+//{
+//	for (unsigned i=0; i<mNO_NCELL; i++) target[i] = mBSIC_NCELL[i];
+//	return mNO_NCELL;
+//}
 
 
 int L3MeasurementResults::decodeLevToDBm(unsigned lev) const

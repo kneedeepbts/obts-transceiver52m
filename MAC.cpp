@@ -30,7 +30,7 @@
 #endif
 #include "Ggsn.h"	// For GgsnInit
 
-#include "Globals.h"
+//#include "Globals.h"
 
 extern bool gLogToConsole;
 
@@ -172,17 +172,17 @@ bool GPRSConfig::sgsnIsInternal()
 }
 
 // (mike) pretty sure this function is not used anywhere...
-unsigned GPRSConfig::GetRAColour()
-{
-	// BEGINCONFIG
-	// 'GPRS.RA_COLOUR',0,0,0,'GPRS Routing Area Color as advertised in the C0T0 beacon'
-	// ENDCONFIG
-    // FIXME: Bypassing the dumb config system...
-//	if (gConfig.defines("GPRS.RA_COLOUR")) {
-//		return gConfig.getNum("GPRS.RA_COLOUR");
-//	}
-	return 0;
-}
+//unsigned GPRSConfig::GetRAColour()
+//{
+//	// BEGINCONFIG
+//	// 'GPRS.RA_COLOUR',0,0,0,'GPRS Routing Area Color as advertised in the C0T0 beacon'
+//	// ENDCONFIG
+//    // FIXME: Bypassing the dumb config system...
+////	if (gConfig.defines("GPRS.RA_COLOUR")) {
+////		return gConfig.getNum("GPRS.RA_COLOUR");
+////	}
+//	return 0;
+//}
 
 // GSM04.60 12.24.  The T3192 code is placed in System Information 13, GSM04.08.
 // The code specifies one of the following values in msec.
@@ -1990,36 +1990,36 @@ static void processSgsnMessages()
 // so 1.0 means the channel is pretty much full, and 2.0 means we could
 // probably fully utilize two channels, at least at this instant.
 // Return the utilization.
-float L2MAC::macComputeUtilization()
-{
-	ScopedLock lock(macLock);	// This function called from CLI.
-	int numReady = 0;
-	float utilization = 0.0;	// Desired downlink utilization at this moment.
-	TBF *tbf;
-	RN_MAC_FOR_ALL_TBF(tbf) {
-		switch (tbf->mtGetState()) {
-			case TBFState::DataReadyToConnect:
-			case TBFState::DataWaiting1:
-			case TBFState::DataWaiting2:
-				numReady++;		// These TBFs are waiting to send a message.
-				continue;
-			case TBFState::DataTransmit:
-			case TBFState::DataReassign:
-			//case TBFState::DataStalled:
-				utilization += tbf->engineDesiredUtilization();
-				continue;
-			default: continue;
-		}
-	}
-	utilization += numReady;
-
-	// We want to average the utilization over some timespan.
-	// This number should be picked to match the delay we use before closing
-	// GPRS chanels, whatever that will be.
-	const unsigned NumFramesToAverage = 48*5;	// roughly 5 seconds worth of RLC blocks.
-	return macDownlinkUtilization =
-		(utilization + macDownlinkUtilization * (NumFramesToAverage-1)) / NumFramesToAverage;
-}
+//float L2MAC::macComputeUtilization()
+//{
+//	ScopedLock lock(macLock);	// This function called from CLI.
+//	int numReady = 0;
+//	float utilization = 0.0;	// Desired downlink utilization at this moment.
+//	TBF *tbf;
+//	RN_MAC_FOR_ALL_TBF(tbf) {
+//		switch (tbf->mtGetState()) {
+//			case TBFState::DataReadyToConnect:
+//			case TBFState::DataWaiting1:
+//			case TBFState::DataWaiting2:
+//				numReady++;		// These TBFs are waiting to send a message.
+//				continue;
+//			case TBFState::DataTransmit:
+//			case TBFState::DataReassign:
+//			//case TBFState::DataStalled:
+//				utilization += tbf->engineDesiredUtilization();
+//				continue;
+//			default: continue;
+//		}
+//	}
+//	utilization += numReady;
+//
+//	// We want to average the utilization over some timespan.
+//	// This number should be picked to match the delay we use before closing
+//	// GPRS chanels, whatever that will be.
+//	const unsigned NumFramesToAverage = 48*5;	// roughly 5 seconds worth of RLC blocks.
+//	return macDownlinkUtilization =
+//		(utilization + macDownlinkUtilization * (NumFramesToAverage-1)) / NumFramesToAverage;
+//}
 
 void L2MAC::macCheckChannels()
 {

@@ -28,7 +28,7 @@
 
 #include "PhysicalStatus.h"
 #include "Logger.h"
-#include "Globals.h"
+//#include "Globals.h"
 #include <sqlite3.h>
 #include "sqlite3util.h"
 
@@ -37,7 +37,7 @@
 #include "GSMLogicalChannel.h"
 
 #include <iostream>
-#include <iomanip>
+//#include <iomanip>
 #include <math.h>
 #include <string>
 

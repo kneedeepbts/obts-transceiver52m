@@ -17,17 +17,17 @@
 // Written by Pat Thompson
 #define LOG_GROUP LogGroup::Control		// Can set Log.Level.Control for debugging
 #include "L3StateMachine.h"
-#include "L3CallControl.h"
+//#include "L3CallControl.h"
 #include "L3TranEntry.h"
 #include "L3MobilityManagement.h"
 #include "L3MMLayer.h"
 #include "L3Handover.h"
 #include "GSMLogicalChannel.h"
 #include "GSML3Message.h"
-#include "GSML3CCMessages.h"
+//#include "GSML3CCMessages.h"
 #include "GSML3RRMessages.h"
 #include "GSML3MMMessages.h"
-#include "SMSMessages.h"
+//#include "SMSMessages.h"
 #include "GSMConfig.h"
 #include "RRLPServer.h"
 #include "Globals.h"
@@ -1094,11 +1094,11 @@ CSL3StateMachine gCSL3StateMachine;
 CSL3StateMachine::CSL3StateMachine() : mCSL3Thread(NULL) {}
 #endif
 
-void l3start()
-{
-	// We are not doing it this way in GSM.  Each channel has its own service loop.
-	// if (l3rewrite()) { gCSL3StateMachine.csl3Start(); }
-}
+//void l3start()
+//{
+//	// We are not doing it this way in GSM.  Each channel has its own service loop.
+//	// if (l3rewrite()) { gCSL3StateMachine.csl3Start(); }
+//}
 
 
 };	// namespace

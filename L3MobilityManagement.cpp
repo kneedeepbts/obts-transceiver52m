@@ -35,7 +35,7 @@
 
 #include "GSMConfig.h"
 #include "GSMTransfer.h"
-#include "ControlCommon.h"
+//#include "ControlCommon.h"
 //#include <GSML3CommonElements.h>
 //#include <GSML3MMElements.h>
 //#include <GSML3CCElements.h>

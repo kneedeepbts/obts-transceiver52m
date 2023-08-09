@@ -28,7 +28,7 @@
 #include "Configuration.h"
 #include "Logger.h"
 #include "Utils.h"
-#include <fstream>
+//#include <fstream>
 #include <iostream>
 #include <string.h>
 
@@ -210,136 +210,136 @@ ConfigurationTable::ConfigurationTable(const char* filename, const char *wCmdNam
 
 }
 
-string ConfigurationTable::getDefaultSQL(const std::string& program, const std::string& version)
-{
-	stringstream ss;
-	ConfigurationKeyMap::iterator mp;
+//string ConfigurationTable::getDefaultSQL(const std::string& program, const std::string& version)
+//{
+//	stringstream ss;
+//	ConfigurationKeyMap::iterator mp;
+//
+//	ss << "--" << endl;
+//	ss << "-- This file was generated using: " << program << " --gensql" << endl;
+//	ss << "-- binary version: " << version << endl;
+//	ss << "--" << endl;
+//	ss << "-- Future changes should not be put in this file directly but" << endl;
+//	ss << "-- rather in the program's ConfigurationKey schema." << endl;
+//	ss << "--" << endl;
+//	ss << "PRAGMA foreign_keys=OFF;" << endl;
+//	//ss << "PRAGMA journal_mode=WAL;" << endl;
+//	ss << "BEGIN TRANSACTION;" << endl;
+//	ss << "CREATE TABLE IF NOT EXISTS CONFIG ( KEYSTRING TEXT UNIQUE NOT NULL, VALUESTRING TEXT, STATIC INTEGER DEFAULT 0, OPTIONAL INTEGER DEFAULT 0, COMMENTS TEXT DEFAULT '');" << endl;
+//
+//	mp = mSchema.begin();
+//	while (mp != mSchema.end()) {
+//		ss << "INSERT OR IGNORE INTO \"CONFIG\" VALUES(";
+//			// name
+//			ss << "'" << mp->first << "',";
+//			// default
+//			ss << "'" << mp->second.getDefaultValue() << "',";
+//			// static
+//			if (mp->second.isStatic()) {
+//				ss << "1";
+//			} else {
+//				ss << "0";
+//			}
+//			ss << ",";
+//			// optional
+//			ss << "0,";
+//			// description
+//			const string description = mp->second.getDescription();
+//			// Try to use a quote that will work: if the description contains ' quote with " else '.
+//			// This is not perfect because these quotes could themselves be quoted.
+//			const char * quote = string::npos != description.find('\'') ? "\"" : "'";
+//			ss << quote;
+//			if (mp->second.getType() == ConfigurationKey::BOOLEAN) {
+//				ss << "1=enabled, 0=disabled - ";
+//			}
+//			ss << mp->second.getDescription();
+//			if (mp->second.isStatic()) {
+//				ss << "  Static.";
+//			}
+//			ss << quote;
+//		ss << ");" << endl;
+//		mp++;
+//	}
+//
+//	ss << "COMMIT;" << endl;
+//	ss << endl;
+//
+//	return ss.str();
+//}
 
-	ss << "--" << endl;
-	ss << "-- This file was generated using: " << program << " --gensql" << endl;
-	ss << "-- binary version: " << version << endl;
-	ss << "--" << endl;
-	ss << "-- Future changes should not be put in this file directly but" << endl;
-	ss << "-- rather in the program's ConfigurationKey schema." << endl;
-	ss << "--" << endl;
-	ss << "PRAGMA foreign_keys=OFF;" << endl;
-	//ss << "PRAGMA journal_mode=WAL;" << endl;
-	ss << "BEGIN TRANSACTION;" << endl;
-	ss << "CREATE TABLE IF NOT EXISTS CONFIG ( KEYSTRING TEXT UNIQUE NOT NULL, VALUESTRING TEXT, STATIC INTEGER DEFAULT 0, OPTIONAL INTEGER DEFAULT 0, COMMENTS TEXT DEFAULT '');" << endl;
-
-	mp = mSchema.begin();
-	while (mp != mSchema.end()) {
-		ss << "INSERT OR IGNORE INTO \"CONFIG\" VALUES(";
-			// name
-			ss << "'" << mp->first << "',";
-			// default
-			ss << "'" << mp->second.getDefaultValue() << "',";
-			// static
-			if (mp->second.isStatic()) {
-				ss << "1";
-			} else {
-				ss << "0";
-			}
-			ss << ",";
-			// optional
-			ss << "0,";
-			// description
-			const string description = mp->second.getDescription();
-			// Try to use a quote that will work: if the description contains ' quote with " else '.
-			// This is not perfect because these quotes could themselves be quoted.
-			const char * quote = string::npos != description.find('\'') ? "\"" : "'";
-			ss << quote;
-			if (mp->second.getType() == ConfigurationKey::BOOLEAN) {
-				ss << "1=enabled, 0=disabled - ";
-			}
-			ss << mp->second.getDescription();
-			if (mp->second.isStatic()) {
-				ss << "  Static.";
-			}
-			ss << quote;
-		ss << ");" << endl;
-		mp++;
-	}
-
-	ss << "COMMIT;" << endl;
-	ss << endl;
-
-	return ss.str();
-}
-
-string ConfigurationTable::getTeX(const std::string& program, const std::string& version)
-{
-	stringstream ss;
-	ConfigurationKeyMap::iterator mp;
-
-	ss << "% START AUTO-GENERATED CONTENT" << endl;
-	ss << "% -- these sections were generated using: " << program << " --gentex" << endl;
-	ss << "% -- binary version: " << version << endl;
-
-	ss << "\\section{Customer Site Parameters}" << endl;
-	ss << "These parameters must be changed to fit your site." << endl;
-	ss << "\\begin{itemize}" << endl;
-	mp = mSchema.begin();
-	while (mp != mSchema.end()) {
-		if (mp->second.getVisibility() == ConfigurationKey::CUSTOMERSITE) {
-			ss << "	\\item \\texttt{";
-				// name
-				ss << mp->first << "} -- ";
-				// description
-				ss << mp->second.getDescription();
-			ss << endl;
-		}
-		mp++;
-	}
-	ss << "\\end{itemize}" << endl;
-	ss << endl;
-
-	ss << "\\section{Customer Tuneable Parameters}" << endl;
-	ss << "These parameters can be changed to optimize your site." << endl;
-	ss << "\\begin{itemize}" << endl;
-	mp = mSchema.begin();
-	while (mp != mSchema.end()) {
-		if (mp->second.getVisibility() != ConfigurationKey::CUSTOMERSITE &&
-			(
-				mp->second.getVisibility() == ConfigurationKey::CUSTOMER ||
-				mp->second.getVisibility() == ConfigurationKey::CUSTOMERTUNE ||
-				mp->second.getVisibility() == ConfigurationKey::CUSTOMERWARN
-			)) {
-			ss << "	\\item \\texttt{";
-				// name
-				ss << mp->first << "} -- ";
-				// description
-				ss << mp->second.getDescription();
-			ss << endl;
-		}
-		mp++;
-	}
-	ss << "\\end{itemize}" << endl;
-	ss << endl;
-
-	ss << "\\section{Developer/Factory Parameters}" << endl;
-	ss << "These parameters should only be changed by when developing new code." << endl;
-	ss << "\\begin{itemize}" << endl;
-	mp = mSchema.begin();
-	while (mp != mSchema.end()) {
-		if (mp->second.getVisibility() == ConfigurationKey::FACTORY ||
-			mp->second.getVisibility() == ConfigurationKey::DEVELOPER) {
-			ss << "	\\item \\texttt{";
-				// name
-				ss << mp->first << "} -- ";
-				// description
-				ss << mp->second.getDescription();
-			ss << endl;
-		}
-		mp++;
-	}
-	ss << "\\end{itemize}" << endl;
-	ss << "% END AUTO-GENERATED CONTENT" << endl;
-	ss << endl;
-
-	string tmp = Utils::replaceAll(ss.str(), "^", "\\^");
-	return Utils::replaceAll(tmp, "_", "\\_");
-}
+//string ConfigurationTable::getTeX(const std::string& program, const std::string& version)
+//{
+//	stringstream ss;
+//	ConfigurationKeyMap::iterator mp;
+//
+//	ss << "% START AUTO-GENERATED CONTENT" << endl;
+//	ss << "% -- these sections were generated using: " << program << " --gentex" << endl;
+//	ss << "% -- binary version: " << version << endl;
+//
+//	ss << "\\section{Customer Site Parameters}" << endl;
+//	ss << "These parameters must be changed to fit your site." << endl;
+//	ss << "\\begin{itemize}" << endl;
+//	mp = mSchema.begin();
+//	while (mp != mSchema.end()) {
+//		if (mp->second.getVisibility() == ConfigurationKey::CUSTOMERSITE) {
+//			ss << "	\\item \\texttt{";
+//				// name
+//				ss << mp->first << "} -- ";
+//				// description
+//				ss << mp->second.getDescription();
+//			ss << endl;
+//		}
+//		mp++;
+//	}
+//	ss << "\\end{itemize}" << endl;
+//	ss << endl;
+//
+//	ss << "\\section{Customer Tuneable Parameters}" << endl;
+//	ss << "These parameters can be changed to optimize your site." << endl;
+//	ss << "\\begin{itemize}" << endl;
+//	mp = mSchema.begin();
+//	while (mp != mSchema.end()) {
+//		if (mp->second.getVisibility() != ConfigurationKey::CUSTOMERSITE &&
+//			(
+//				mp->second.getVisibility() == ConfigurationKey::CUSTOMER ||
+//				mp->second.getVisibility() == ConfigurationKey::CUSTOMERTUNE ||
+//				mp->second.getVisibility() == ConfigurationKey::CUSTOMERWARN
+//			)) {
+//			ss << "	\\item \\texttt{";
+//				// name
+//				ss << mp->first << "} -- ";
+//				// description
+//				ss << mp->second.getDescription();
+//			ss << endl;
+//		}
+//		mp++;
+//	}
+//	ss << "\\end{itemize}" << endl;
+//	ss << endl;
+//
+//	ss << "\\section{Developer/Factory Parameters}" << endl;
+//	ss << "These parameters should only be changed by when developing new code." << endl;
+//	ss << "\\begin{itemize}" << endl;
+//	mp = mSchema.begin();
+//	while (mp != mSchema.end()) {
+//		if (mp->second.getVisibility() == ConfigurationKey::FACTORY ||
+//			mp->second.getVisibility() == ConfigurationKey::DEVELOPER) {
+//			ss << "	\\item \\texttt{";
+//				// name
+//				ss << mp->first << "} -- ";
+//				// description
+//				ss << mp->second.getDescription();
+//			ss << endl;
+//		}
+//		mp++;
+//	}
+//	ss << "\\end{itemize}" << endl;
+//	ss << "% END AUTO-GENERATED CONTENT" << endl;
+//	ss << endl;
+//
+//	string tmp = Utils::replaceAll(ss.str(), "^", "\\^");
+//	return Utils::replaceAll(tmp, "_", "\\_");
+//}
 
 bool ConfigurationTable::defines(const string& key)
 {
@@ -698,14 +698,14 @@ const ConfigurationRecord& ConfigurationTable::lookup(const string& key)
 
 
 
-bool ConfigurationTable::isStatic(const string& key)
-{
-	if (keyDefinedInSchema(key)) {
-		return mSchema[key].isStatic();
-	} else {
-		return false;
-	}
-}
+//bool ConfigurationTable::isStatic(const string& key)
+//{
+//	if (keyDefinedInSchema(key)) {
+//		return mSchema[key].isStatic();
+//	} else {
+//		return false;
+//	}
+//}
 
 
 
@@ -750,47 +750,47 @@ long ConfigurationTable::getNum(const string& key)
 }
 
 
-float ConfigurationTable::getFloat(const string& key)
-{
-	try {
-		ScopedLock lock(mLock);
-		return lookup(key).floatNumber();
-	} catch (ConfigurationTableKeyNotFound) {
-		// Raise an alert and re-throw the exception.
-		gLogEarly(LOG_DEBUG, "configuration parameter %s has no defined value", key.c_str());
-		throw ConfigurationTableKeyNotFound(key);
-	}
-}
+//float ConfigurationTable::getFloat(const string& key)
+//{
+//	try {
+//		ScopedLock lock(mLock);
+//		return lookup(key).floatNumber();
+//	} catch (ConfigurationTableKeyNotFound) {
+//		// Raise an alert and re-throw the exception.
+//		gLogEarly(LOG_DEBUG, "configuration parameter %s has no defined value", key.c_str());
+//		throw ConfigurationTableKeyNotFound(key);
+//	}
+//}
 
-std::vector<string> ConfigurationTable::getVectorOfStrings(const string& key)
-{
-	// Look up the string.
-	char *line=NULL;
-	try {
-		ScopedLock lock(mLock);
-		const ConfigurationRecord& rec = lookup(key);
-		line = strdup(rec.value().c_str());
-	} catch (ConfigurationTableKeyNotFound) {
-		// Raise an alert and re-throw the exception.
-		gLogEarly(LOG_DEBUG, "configuration parameter %s has no defined value", key.c_str());
-		throw ConfigurationTableKeyNotFound(key);
-	}
-
-	assert(line);
-	char *lp = line;
-	
-	// Parse the string.
-	std::vector<string> retVal;
-	while (lp) {
-		while (*lp==' ') lp++;
-		if (*lp == '\0') break;
-		char *tp = strsep(&lp," ");
-		if (!tp) break;
-		retVal.push_back(tp);
-	}
-	free(line);
-	return retVal;
-}
+//std::vector<string> ConfigurationTable::getVectorOfStrings(const string& key)
+//{
+//	// Look up the string.
+//	char *line=NULL;
+//	try {
+//		ScopedLock lock(mLock);
+//		const ConfigurationRecord& rec = lookup(key);
+//		line = strdup(rec.value().c_str());
+//	} catch (ConfigurationTableKeyNotFound) {
+//		// Raise an alert and re-throw the exception.
+//		gLogEarly(LOG_DEBUG, "configuration parameter %s has no defined value", key.c_str());
+//		throw ConfigurationTableKeyNotFound(key);
+//	}
+//
+//	assert(line);
+//	char *lp = line;
+//
+//	// Parse the string.
+//	std::vector<string> retVal;
+//	while (lp) {
+//		while (*lp==' ') lp++;
+//		if (*lp == '\0') break;
+//		char *tp = strsep(&lp," ");
+//		if (!tp) break;
+//		retVal.push_back(tp);
+//	}
+//	free(line);
+//	return retVal;
+//}
 
 
 std::vector<unsigned> ConfigurationTable::getVector(const string& key)
@@ -862,32 +862,32 @@ void ConfigurationTable::find(const string& pat, ostream& os) const
 }
 
 
-ConfigurationRecordMap ConfigurationTable::getAllPairs() const
-{
-	ConfigurationRecordMap tmp;
-
-	// Prepare the statement.
-	string cmd = "SELECT KEYSTRING,VALUESTRING FROM CONFIG";
-	sqlite3_stmt *stmt;
-	if (sqlite3_prepare_statement(mDB,&stmt,cmd.c_str())) return tmp;
-	// Read the result.
-	int src = sqlite3_run_query(mDB,stmt);
-	while (src==SQLITE_ROW) {
-		const char* key = (const char*)sqlite3_column_text(stmt,0);
-		const char* value = (const char*)sqlite3_column_text(stmt,1);
-		if (key && value) {
-			string skey(key);
-			tmp[skey] = ConfigurationRecord(skey,value);
-		} else if (key && !value) {
-			string skey(key);
-			tmp[skey] = ConfigurationRecord(skey,false);
-		}
-		src = sqlite3_run_query(mDB,stmt);
-	}
-	sqlite3_finalize(stmt);
-
-	return tmp;
-}
+//ConfigurationRecordMap ConfigurationTable::getAllPairs() const
+//{
+//	ConfigurationRecordMap tmp;
+//
+//	// Prepare the statement.
+//	string cmd = "SELECT KEYSTRING,VALUESTRING FROM CONFIG";
+//	sqlite3_stmt *stmt;
+//	if (sqlite3_prepare_statement(mDB,&stmt,cmd.c_str())) return tmp;
+//	// Read the result.
+//	int src = sqlite3_run_query(mDB,stmt);
+//	while (src==SQLITE_ROW) {
+//		const char* key = (const char*)sqlite3_column_text(stmt,0);
+//		const char* value = (const char*)sqlite3_column_text(stmt,1);
+//		if (key && value) {
+//			string skey(key);
+//			tmp[skey] = ConfigurationRecord(skey,value);
+//		} else if (key && !value) {
+//			string skey(key);
+//			tmp[skey] = ConfigurationRecord(skey,false);
+//		}
+//		src = sqlite3_run_query(mDB,stmt);
+//	}
+//	sqlite3_finalize(stmt);
+//
+//	return tmp;
+//}
 
 bool ConfigurationTable::set(const string& key, const string& value)
 {
@@ -932,40 +932,40 @@ void ConfigurationTable::checkCacheAge()
 }
 
 
-void ConfigurationTable::purge()
-{
-	ScopedLock lock(mLock);
-	ConfigurationMap::iterator mp = mCache.begin();
-	while (mp != mCache.end()) {
-		ConfigurationMap::iterator prev = mp;
-		mp++;
-		mCache.erase(prev);
-	}
-}
+//void ConfigurationTable::purge()
+//{
+//	ScopedLock lock(mLock);
+//	ConfigurationMap::iterator mp = mCache.begin();
+//	while (mp != mCache.end()) {
+//		ConfigurationMap::iterator prev = mp;
+//		mp++;
+//		mCache.erase(prev);
+//	}
+//}
 
 
-void ConfigurationTable::setUpdateHook(void(*func)(void *,int ,char const *,char const *,sqlite3_int64))
-{
-	assert(mDB);
-	sqlite3_update_hook(mDB,func,NULL);
-}
+//void ConfigurationTable::setUpdateHook(void(*func)(void *,int ,char const *,char const *,sqlite3_int64))
+//{
+//	assert(mDB);
+//	sqlite3_update_hook(mDB,func,NULL);
+//}
 
 
-void ConfigurationTable::setCrossCheckHook(vector<string> (*wCrossCheck)(const string&))
-{
-	mCrossCheck = wCrossCheck;
-}
+//void ConfigurationTable::setCrossCheckHook(vector<string> (*wCrossCheck)(const string&))
+//{
+//	mCrossCheck = wCrossCheck;
+//}
 
 
-vector<string> ConfigurationTable::crossCheck(const string& key) {
-	vector<string> ret;
-
-	if (mCrossCheck != NULL) {
-		ret = mCrossCheck(key);
-	}
-
-	return ret;
-}
+//vector<string> ConfigurationTable::crossCheck(const string& key) {
+//	vector<string> ret;
+//
+//	if (mCrossCheck != NULL) {
+//		ret = mCrossCheck(key);
+//	}
+//
+//	return ret;
+//}
 
 void HashString::computeHash()
 {
@@ -1000,12 +1000,12 @@ const char* SimpleKeyValue::get(const char* key) const
 	return p->second.c_str();
 }
 
-std::string SimpleKeyValue::getStrOrBust(const char *key) const
-{
-	HashStringMap::const_iterator p = mMap.find(key);
-	if (p==mMap.end()) throw(SimpleKeyValueException(format("key not found:%s",key)));
-	return p->second;
-}
+//std::string SimpleKeyValue::getStrOrBust(const char *key) const
+//{
+//	HashStringMap::const_iterator p = mMap.find(key);
+//	if (p==mMap.end()) throw(SimpleKeyValueException(format("key not found:%s",key)));
+//	return p->second;
+//}
 
 long SimpleKeyValue::getNumOrBust(const char *key) const
 {
@@ -1195,99 +1195,99 @@ const std::string ConfigurationKey::typeToString(const ConfigurationKey::Type& t
 	return ret;
 }
 
-void ConfigurationKey::printKey(const ConfigurationKey &key, const std::string& currentValue, ostream& os) {
-	os << key.getName() << " ";
-	if (!currentValue.length()) {
-		os << "(disabled)";
-	} else {
-		os << currentValue;
-	}
-	if (currentValue.compare(key.getDefaultValue()) == 0) {
-		os << "     [default]";
-	}
-	os << endl;
-}
+//void ConfigurationKey::printKey(const ConfigurationKey &key, const std::string& currentValue, ostream& os) {
+//	os << key.getName() << " ";
+//	if (!currentValue.length()) {
+//		os << "(disabled)";
+//	} else {
+//		os << currentValue;
+//	}
+//	if (currentValue.compare(key.getDefaultValue()) == 0) {
+//		os << "     [default]";
+//	}
+//	os << endl;
+//}
 
-void ConfigurationKey::printDescription(const ConfigurationKey &key, ostream& os) {
-	std::string tmp;
-	unsigned scope;
-
-	os << " - description:      " << key.getDescription() << std::endl;
-	if (key.getUnits().length()) {
-		os << " - units:            " << key.getUnits() << std::endl;
-	}
-	os << " - type:             " << ConfigurationKey::typeToString(key.getType()) << std::endl;
-	if (key.getDefaultValue().length()) {
-		os << " - default value:    " << key.getDefaultValue() << std::endl;
-	}
-	os << " - visibility level: " << ConfigurationKey::visibilityLevelToString(key.getVisibility()) << std::endl;
-	os << " - static:           " << key.isStatic() << std::endl;
-
-	tmp = key.getValidValues();
-	if (key.getType() == ConfigurationKey::VALRANGE) {
-		int startPos = tmp.find('(');
-		uint delimiter = 0;
-		if (startPos != (int)std::string::npos) {
-			tmp = tmp.substr(0, startPos);
-		}
-		startPos = -1;
-
-		do {
-			startPos++;
-			delimiter = tmp.find(':', startPos);
-			os << " - valid values:     " << "from " << tmp.substr(startPos, delimiter-startPos) << " to "
-				<< tmp.substr(delimiter+1, tmp.find(',', delimiter)-delimiter-1) << std::endl;
-
-		} while ((startPos = tmp.find(',', startPos)) != (int)std::string::npos);
-
-	} else if (key.getType() == ConfigurationKey::CHOICE) {
-		int startPos = -1;
-		uint endPos = 0;
-
-		do {
-			startPos++;
-			if ((endPos = tmp.find('|', startPos)) != std::string::npos) {
-				os << " - valid values:     " << tmp.substr(startPos, endPos-startPos);
-				os << " = " << tmp.substr(endPos+1, tmp.find(',', endPos)-endPos-1) << std::endl;
-			} else {
-				os << " - valid values:     " << tmp.substr(startPos, tmp.find(',', startPos)-startPos) << std::endl;
-			}
-
-		} while ((startPos = tmp.find(',', startPos)) != (int)std::string::npos);
-
-	} else if (key.getType() == ConfigurationKey::BOOLEAN) {
-		os << " - valid values:     0 = disabled" << std::endl;
-		os << " - valid values:     1 = enabled" << std::endl;
-
-	} else if (key.getType() == ConfigurationKey::STRING) {
-		os << " - valid val regex:  " << tmp << std::endl;
-
-	} else if (key.getValidValues().length()) {
-		os << " - raw valid values: " << tmp << std::endl;
-	}
-
-	scope = key.getScope();
-	if (scope) {
-		if (scope & ConfigurationKey::GLOBALLYUNIQUE) {
-			os << " - scope:            value must be unique across all nodes" << std::endl;
-		}
-		if (scope & ConfigurationKey::GLOBALLYSAME) {
-			os << " - scope:            value must be the same across all nodes" << std::endl;
-		}
-		if (scope & ConfigurationKey::NEIGHBORSUNIQUE) {
-			os << " - scope:            value must be unique across all neighbors" << std::endl;
-		}
-		if (scope & ConfigurationKey::NEIGHBORSSAME) {
-			os << " - scope:            value must be the same across all neighbors" << std::endl;
-		}
-		if (scope & ConfigurationKey::NEIGHBORSSAME) {
-			os << " - scope:            must be the same across all neighbors" << std::endl;
-		}
-		if (scope & ConfigurationKey::NODESPECIFIC) {
-			os << " - scope:            specific to each individual node" << std::endl;
-		}
-	}
-}
+//void ConfigurationKey::printDescription(const ConfigurationKey &key, ostream& os) {
+//	std::string tmp;
+//	unsigned scope;
+//
+//	os << " - description:      " << key.getDescription() << std::endl;
+//	if (key.getUnits().length()) {
+//		os << " - units:            " << key.getUnits() << std::endl;
+//	}
+//	os << " - type:             " << ConfigurationKey::typeToString(key.getType()) << std::endl;
+//	if (key.getDefaultValue().length()) {
+//		os << " - default value:    " << key.getDefaultValue() << std::endl;
+//	}
+//	os << " - visibility level: " << ConfigurationKey::visibilityLevelToString(key.getVisibility()) << std::endl;
+//	os << " - static:           " << key.isStatic() << std::endl;
+//
+//	tmp = key.getValidValues();
+//	if (key.getType() == ConfigurationKey::VALRANGE) {
+//		int startPos = tmp.find('(');
+//		uint delimiter = 0;
+//		if (startPos != (int)std::string::npos) {
+//			tmp = tmp.substr(0, startPos);
+//		}
+//		startPos = -1;
+//
+//		do {
+//			startPos++;
+//			delimiter = tmp.find(':', startPos);
+//			os << " - valid values:     " << "from " << tmp.substr(startPos, delimiter-startPos) << " to "
+//				<< tmp.substr(delimiter+1, tmp.find(',', delimiter)-delimiter-1) << std::endl;
+//
+//		} while ((startPos = tmp.find(',', startPos)) != (int)std::string::npos);
+//
+//	} else if (key.getType() == ConfigurationKey::CHOICE) {
+//		int startPos = -1;
+//		uint endPos = 0;
+//
+//		do {
+//			startPos++;
+//			if ((endPos = tmp.find('|', startPos)) != std::string::npos) {
+//				os << " - valid values:     " << tmp.substr(startPos, endPos-startPos);
+//				os << " = " << tmp.substr(endPos+1, tmp.find(',', endPos)-endPos-1) << std::endl;
+//			} else {
+//				os << " - valid values:     " << tmp.substr(startPos, tmp.find(',', startPos)-startPos) << std::endl;
+//			}
+//
+//		} while ((startPos = tmp.find(',', startPos)) != (int)std::string::npos);
+//
+//	} else if (key.getType() == ConfigurationKey::BOOLEAN) {
+//		os << " - valid values:     0 = disabled" << std::endl;
+//		os << " - valid values:     1 = enabled" << std::endl;
+//
+//	} else if (key.getType() == ConfigurationKey::STRING) {
+//		os << " - valid val regex:  " << tmp << std::endl;
+//
+//	} else if (key.getValidValues().length()) {
+//		os << " - raw valid values: " << tmp << std::endl;
+//	}
+//
+//	scope = key.getScope();
+//	if (scope) {
+//		if (scope & ConfigurationKey::GLOBALLYUNIQUE) {
+//			os << " - scope:            value must be unique across all nodes" << std::endl;
+//		}
+//		if (scope & ConfigurationKey::GLOBALLYSAME) {
+//			os << " - scope:            value must be the same across all nodes" << std::endl;
+//		}
+//		if (scope & ConfigurationKey::NEIGHBORSUNIQUE) {
+//			os << " - scope:            value must be unique across all neighbors" << std::endl;
+//		}
+//		if (scope & ConfigurationKey::NEIGHBORSSAME) {
+//			os << " - scope:            value must be the same across all neighbors" << std::endl;
+//		}
+//		if (scope & ConfigurationKey::NEIGHBORSSAME) {
+//			os << " - scope:            must be the same across all neighbors" << std::endl;
+//		}
+//		if (scope & ConfigurationKey::NODESPECIFIC) {
+//			os << " - scope:            specific to each individual node" << std::endl;
+//		}
+//	}
+//}
 
 
 // vim: ts=4 sw=4

@@ -332,15 +332,15 @@ void TBF::mtDetach()
 }
 
 // TODO: The TBF needs to detach and then re-attach.
-void TBF::mtDeReattach()
-{
-	if (mtAttached) {
-		mtAttached = false; // Must do this before calling msCleanUSFs()
-		mtSetState(TBFState::DataReadyToConnect);
-		mtFreeTFI();
-		if (mtDir == RLCDir::Up) { mtMS->msCleanUSFs(); }
-	}
-}
+//void TBF::mtDeReattach()
+//{
+//	if (mtAttached) {
+//		mtAttached = false; // Must do this before calling msCleanUSFs()
+//		mtSetState(TBFState::DataReadyToConnect);
+//		mtFreeTFI();
+//		if (mtDir == RLCDir::Up) { mtMS->msCleanUSFs(); }
+//	}
+//}
 
 uint32_t TBF::mtGetTlli()
 {

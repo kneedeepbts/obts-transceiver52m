@@ -29,7 +29,7 @@
 //#include <config.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <cstdio>
+//#include <cstdio>
 #include <sys/select.h>
 
 #include "Defines.h"
@@ -37,8 +37,8 @@
 #include "Sockets.h"
 #include "Logger.h"
 #include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
+//#include <unistd.h>
+//#include <fcntl.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -175,11 +175,11 @@ int DatagramSocket::write( const char * message)
 	return write(message,length);
 }
 
-int DatagramSocket::writeBack( const char * message)
-{
-	size_t length=strlen(message)+1;
-	return writeBack(message,length);
-}
+//int DatagramSocket::writeBack( const char * message)
+//{
+//	size_t length=strlen(message)+1;
+//	return writeBack(message,length);
+//}
 
 
 
@@ -313,12 +313,12 @@ unsigned short UDPSocket::port() const
 
 
 
-UDDSocket::UDDSocket(const char* localPath, const char* remotePath)
-	:DatagramSocket()
-{
-	if (localPath!=NULL) open(localPath);
-	if (remotePath!=NULL) destination(remotePath);
-}
+//UDDSocket::UDDSocket(const char* localPath, const char* remotePath)
+//	:DatagramSocket()
+//{
+//	if (localPath!=NULL) open(localPath);
+//	if (remotePath!=NULL) destination(remotePath);
+//}
 
 
 

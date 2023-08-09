@@ -27,7 +27,7 @@
 #include "L3TermCause.h"
 #include "L3StateMachine.h"
 #include "GSML3MMElements.h"	// for L3CMServiceType
-#include "GSML3CCElements.h"	// for L3Cause
+//#include "GSML3CCElements.h"	// for L3Cause
 #include <algorithm>
 
 namespace SIP {
@@ -647,11 +647,11 @@ SipMessage *SipDialog::makeRegisterMsg(DialogType wMethod, const L3LogicalChanne
 	return msg;
 }
 
-void SipDialog::dgReset()
-{
-	mPrevDialogState = DialogState::dialogUndefined; sipStopTimers();
-	//mDownlinkFifo.clear();
-}
+//void SipDialog::dgReset()
+//{
+//	mPrevDialogState = DialogState::dialogUndefined; sipStopTimers();
+//	//mDownlinkFifo.clear();
+//}
 
 
 void SipDialog::MODSendBYE(TermCause cause)

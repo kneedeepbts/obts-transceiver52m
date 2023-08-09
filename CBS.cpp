@@ -179,51 +179,51 @@ static void CBMessage2SQLFields(CBMessage &msg, vector<string>*cols, vector<stri
 }
 
 // Deletes all messages that match msg, which must have at least one field set.
-int CBSDeleteMessage(CBMessage &msg)
-{
-	vector<string> fields;
-	CBMessage2SQLFields(msg,NULL,NULL,&fields,false);
-	if (fields.size()) {
-		string query = format("DELETE FROM SMSCB WHERE %s",strJoin(fields,","));
-		return cbsRunQuery(query);
-	} else {
-		return 0;	// If the CBMessage contained no fields, dont delete all messages, just return 0.
-	}
-}
+//int CBSDeleteMessage(CBMessage &msg)
+//{
+//	vector<string> fields;
+//	CBMessage2SQLFields(msg,NULL,NULL,&fields,false);
+//	if (fields.size()) {
+//		string query = format("DELETE FROM SMSCB WHERE %s",strJoin(fields,","));
+//		return cbsRunQuery(query);
+//	} else {
+//		return 0;	// If the CBMessage contained no fields, dont delete all messages, just return 0.
+//	}
+//}
 
 
-int CBSAddMessage(CBMessage &msg, string &errorMsg)
-{
-	if (msg.mMessageText.size() == 0) {
-		errorMsg = string("Attempt to add message with no text");
-		return 0;
-	}
-	if (!CBSConnectDatabase(true)) {
-		errorMsg = string("could not write to database");
-		return 0;
-	}
-
-
-	// Does the message exist already?
-	vector<CBMessage> existing;
-	CBSGetMessages(existing,msg.mMessageText);
-	for (vector<CBMessage>::iterator it = existing.begin(); it != existing.end(); it++) {
-		if (msg.match(*it)) {
-			errorMsg = string("Attempt to add duplicate message");
-			return 0;
-		}
-	}
-
-	// TODO: If the message matches an existing we should increment the update_number.
-
-	// like this: INSERT OR REPLACE INTO SMSCB (GS,MESSAGE_CODE,UPDATE_NUMBER,MSGID,LANGUAGE_CODE,MESSAGE) VALUES (0,0,0,0,0,'whatever')
-	// Cannot use REPLACE: REPLACE only works if INSERT would generate a constraint conflict, ie, duplicate UNIQ field.
-	vector<string> cols, vals;
-	// We must update all the fields with the history "NOT NULL" value in the database.  Oops.
-	CBMessage2SQLFields(msg, &cols, &vals, NULL,true);
-	string query = format("INSERT INTO SMSCB (%s) VALUES (%s)",strJoin(cols,","),strJoin(vals,","));
-	return cbsRunQuery(query);
-}
+//int CBSAddMessage(CBMessage &msg, string &errorMsg)
+//{
+//	if (msg.mMessageText.size() == 0) {
+//		errorMsg = string("Attempt to add message with no text");
+//		return 0;
+//	}
+//	if (!CBSConnectDatabase(true)) {
+//		errorMsg = string("could not write to database");
+//		return 0;
+//	}
+//
+//
+//	// Does the message exist already?
+//	vector<CBMessage> existing;
+//	CBSGetMessages(existing,msg.mMessageText);
+//	for (vector<CBMessage>::iterator it = existing.begin(); it != existing.end(); it++) {
+//		if (msg.match(*it)) {
+//			errorMsg = string("Attempt to add duplicate message");
+//			return 0;
+//		}
+//	}
+//
+//	// TODO: If the message matches an existing we should increment the update_number.
+//
+//	// like this: INSERT OR REPLACE INTO SMSCB (GS,MESSAGE_CODE,UPDATE_NUMBER,MSGID,LANGUAGE_CODE,MESSAGE) VALUES (0,0,0,0,0,'whatever')
+//	// Cannot use REPLACE: REPLACE only works if INSERT would generate a constraint conflict, ie, duplicate UNIQ field.
+//	vector<string> cols, vals;
+//	// We must update all the fields with the history "NOT NULL" value in the database.  Oops.
+//	CBMessage2SQLFields(msg, &cols, &vals, NULL,true);
+//	string query = format("INSERT INTO SMSCB (%s) VALUES (%s)",strJoin(cols,","),strJoin(vals,","));
+//	return cbsRunQuery(query);
+//}
 
 
 static void encode7(char mc, int &shift, unsigned int &dp, int &buf, char *thisPage)
@@ -313,10 +313,10 @@ string CBMessage::cbtext()
 	return os.str();
 }
 
-void CBMessage::cbtext(std::ostream &os)
-{
-	os <<cbtext();
-}
+//void CBMessage::cbtext(std::ostream &os)
+//{
+//	os <<cbtext();
+//}
 
 
 // (pat) The SMSCB name is misleading; this has nothing to do with SMS.  It is Cell Broadcast Service.

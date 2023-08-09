@@ -24,8 +24,8 @@
 #include <stdlib.h>
 #include <iostream>
 
-#include <sys/types.h>
-#include <semaphore.h>
+//#include <sys/types.h>
+//#include <semaphore.h>
 
 #include "Logger.h"
 #include "Timeval.h"
@@ -37,7 +37,7 @@
 #include "SIPBase.h"
 #include "SIP2Interface.h"
 #include "SIPUtility.h"
-#include "SIPRtp.h"
+//#include "SIPRtp.h"
 //#include "config.h"		// For VERSION
 
 #undef WARNING

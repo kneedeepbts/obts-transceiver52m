@@ -79,30 +79,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
+//#include <getopt.h>
 #include <errno.h>
-#include <signal.h>
+//#include <signal.h>
 #include <sys/fcntl.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
+//#include <sys/stat.h>
+//#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <poll.h>
+//#include <poll.h>
 
-#include <netdb.h>			// pat added for gethostbyname
+//#include <netdb.h>			// pat added for gethostbyname
 #include <netinet/ip.h>		// pat added for IPv4 iphdr
 #include <netinet/tcp.h>		// pat added for tcphdr
 #include <netinet/udp.h>		// pat added for udphdr
 
-#include <linux/if.h>			// pat added.
-#include <linux/if_tun.h>			// pat added.
+//#include <linux/if.h>			// pat added.
+//#include <linux/if_tun.h>			// pat added.
 //#include <sys/ioctl.h>			// pat added, then removed because it defines NCC used in GSMConfig.
-#include <assert.h>				// pat added
-#include <stdarg.h>				// pat added
+//#include <assert.h>				// pat added
+//#include <stdarg.h>				// pat added
 #include <time.h>				// pat added.
-#include <sys/time.h>
-#include <sys/types.h>
-#include <wait.h>
+//#include <sys/time.h>
+//#include <sys/types.h>
+//#include <wait.h>
 #include "miniggsn.h"
 #undef NCC	// Make sure.  This is defined in ioctl.h, but used as a name in GSMConfig.h.
 #include "Ggsn.h"
@@ -122,7 +122,7 @@
 
 namespace SGSN {
 
-int pdpWriteHighSide(PdpContext *pdp, unsigned char *packet, unsigned len);
+//int pdpWriteHighSide(PdpContext *pdp, unsigned char *packet, unsigned len);
 int tun_fd = -1; // This is the tunnel we use to talk with the MSs.
 FILE *mg_log_fp = NULL;		// Extra log file for IP traffic.
 int mg_debug_level = 0;

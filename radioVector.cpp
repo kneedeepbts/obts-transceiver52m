@@ -31,10 +31,10 @@ GSM::Time radioVector::getTime() const
 	return mTime;
 }
 
-void radioVector::setTime(const GSM::Time& wTime)
-{
-	mTime = wTime;
-}
+//void radioVector::setTime(const GSM::Time& wTime)
+//{
+//	mTime = wTime;
+//}
 
 bool radioVector::operator>(const radioVector& other) const
 {
@@ -85,19 +85,19 @@ radioVector *VectorFIFO::get()
 	return (radioVector*) mQ.get();
 }
 
-GSM::Time VectorQueue::nextTime() const
-{
-	GSM::Time retVal;
-	mLock.lock();
-
-	while (mQ.size()==0)
-		mWriteSignal.wait(mLock);
-
-	retVal = mQ.top()->getTime();
-	mLock.unlock();
-
-	return retVal;
-}
+//GSM::Time VectorQueue::nextTime() const
+//{
+//	GSM::Time retVal;
+//	mLock.lock();
+//
+//	while (mQ.size()==0)
+//		mWriteSignal.wait(mLock);
+//
+//	retVal = mQ.top()->getTime();
+//	mLock.unlock();
+//
+//	return retVal;
+//}
 
 radioVector* VectorQueue::getStaleBurst(const GSM::Time& targTime)
 {

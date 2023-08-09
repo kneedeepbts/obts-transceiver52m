@@ -20,13 +20,13 @@
 #include "Logger.h"
 #include "Globals.h"
 
-#include <sqlite3.h>
+//#include <sqlite3.h>
 #include "sqlite3util.h"
 
 #include <time.h>
 
 #include <sstream>
-#include <algorithm>
+//#include <algorithm>
 
 using namespace Peering;
 using namespace std;
@@ -86,29 +86,29 @@ bool NeighborTable::ntFindByArfcn(int arfcn, int bsic, NeighborEntry *pentry)
 
 
 
-void NeighborTable::NeighborTableInit(const char* wPath)
-{
-	if (0) runSomeTests();
-#if NEIGHBOR_TABLE_ON_DISK
-	int rc = sqlite3_open(wPath,&mDB);
-	if (rc) {
-		LOG(ALERT) << "Cannot open NeighborTable database: " << sqlite3_errmsg(mDB);
-		sqlite3_close(mDB);
-		mDB = NULL;
-		return;
-	}
-	if (!sqlite3_command(mDB,createNeighborTable)) {
-		LOG(ALERT) << "Cannot create Neighbor table";
-	}
-	// Set high-concurrency WAL mode.
-	if (!sqlite3_command(mDB,enableWAL)) {
-		LOG(ALERT) << "Cannot enable WAL mode on database at " << wPath << ", error message: " << sqlite3_errmsg(mDB);
-	}
-#endif
-
-	// Fill the database.
-	ntFill();
-}
+//void NeighborTable::NeighborTableInit(const char* wPath)
+//{
+//	if (0) runSomeTests();
+//#if NEIGHBOR_TABLE_ON_DISK
+//	int rc = sqlite3_open(wPath,&mDB);
+//	if (rc) {
+//		LOG(ALERT) << "Cannot open NeighborTable database: " << sqlite3_errmsg(mDB);
+//		sqlite3_close(mDB);
+//		mDB = NULL;
+//		return;
+//	}
+//	if (!sqlite3_command(mDB,createNeighborTable)) {
+//		LOG(ALERT) << "Cannot create Neighbor table";
+//	}
+//	// Set high-concurrency WAL mode.
+//	if (!sqlite3_command(mDB,enableWAL)) {
+//		LOG(ALERT) << "Cannot enable WAL mode on database at " << wPath << ", error message: " << sqlite3_errmsg(mDB);
+//	}
+//#endif
+//
+//	// Fill the database.
+//	ntFill();
+//}
 
 
 // Does the ipaddr include a port specification?
@@ -474,15 +474,15 @@ int NeighborTable::getARFCN(unsigned BCCH_FREQ_NCELL)
 	return mARFCNList[BCCH_FREQ_NCELL];
 }
 
-int NeighborTable::getFreqIndexForARFCN(unsigned arfcn)
-{
-	ScopedLock lock(mLock);
-	int freqIndex = 0;
-	for (std::vector<unsigned>::iterator it = mARFCNList.begin(); it != mARFCNList.end(); it++, freqIndex++) {
-		if (*it == arfcn) return freqIndex;
-	}
-	return -1;	// Not found.
-}
+//int NeighborTable::getFreqIndexForARFCN(unsigned arfcn)
+//{
+//	ScopedLock lock(mLock);
+//	int freqIndex = 0;
+//	for (std::vector<unsigned>::iterator it = mARFCNList.begin(); it != mARFCNList.end(); it++, freqIndex++) {
+//		if (*it == arfcn) return freqIndex;
+//	}
+//	return -1;	// Not found.
+//}
 
 
 
@@ -656,20 +656,20 @@ int NeighborTable::getBCCSet() const
 }
 #endif
 
-string NeighborEntry::neC0PlusBSIC() const
-{
-	return format("%d:%d",(int)mC0,(int)mBSIC);
-}
+//string NeighborEntry::neC0PlusBSIC() const
+//{
+//	return format("%d:%d",(int)mC0,(int)mBSIC);
+//}
 
 // How many seconds ago the value was updated, or 0.
 // This is only for display; it does not work for comparison, because 0 is not handled properly.
-long NeighborEntry::getUpdated() const
-{
-	if (mUpdated == 0) { return 0; }
-	long updated = time(NULL) - mUpdated;	// elapsed time since updated in seconds.
-	devassert(updated >= 0);		// This can not go negative because it is a time in the past.
-	return updated;
-}
+//long NeighborEntry::getUpdated() const
+//{
+//	if (mUpdated == 0) { return 0; }
+//	long updated = time(NULL) - mUpdated;	// elapsed time since updated in seconds.
+//	devassert(updated >= 0);		// This can not go negative because it is a time in the past.
+//	return updated;
+//}
 
 long NeighborEntry::getHoldoff() const
 {
@@ -679,64 +679,64 @@ long NeighborEntry::getHoldoff() const
 	return mHoldoff - now;		// seconds remaining.
 }
 
-void NeighborTable::getNeighborVector(std::vector<NeighborEntry> &nvec)
-{
-	ScopedLock lock(mLock);
-	nvec.clear();
-	for (NeighborTableMap::iterator mit = mNeighborMap.begin(); mit != mNeighborMap.end(); mit++) {
-		LOG(DEBUG) <<"Pushing IPaddr="<<mit->first <<" entry.mIPAddress="<<mit->second.mIPAddress;
-		nvec.push_back(mit->second);
-	}
-}
+//void NeighborTable::getNeighborVector(std::vector<NeighborEntry> &nvec)
+//{
+//	ScopedLock lock(mLock);
+//	nvec.clear();
+//	for (NeighborTableMap::iterator mit = mNeighborMap.begin(); mit != mNeighborMap.end(); mit++) {
+//		LOG(DEBUG) <<"Pushing IPaddr="<<mit->first <<" entry.mIPAddress="<<mit->second.mIPAddress;
+//		nvec.push_back(mit->second);
+//	}
+//}
 
 bool NeighborTable::neighborCongestion(unsigned arfcn, unsigned bsic)
 {
 	return false;
 }
 
-static void run1test(vector<int> &foo)
-{
-	for (vector<int>::iterator it = foo.begin(); it != foo.end(); it++) printf("%d ",*it);
-	printf("\n");
-	sort(foo.begin(),foo.end());
-	printf("after sort: "); for (vector<int>::iterator it = foo.begin(); it != foo.end(); it++) printf("%d ",*it);
-	printf("\n");
-	uniquify(foo);
-	printf("after uniquify: "); for (vector<int>::iterator it = foo.begin(); it != foo.end(); it++) printf("%d ",*it);
-	printf("\n");
-	rollLeft(foo);
-	printf("after rollLeft: "); for (vector<int>::iterator it = foo.begin(); it != foo.end(); it++) printf("%d ",*it);
-	printf("\n");
-}
+//static void run1test(vector<int> &foo)
+//{
+//	for (vector<int>::iterator it = foo.begin(); it != foo.end(); it++) printf("%d ",*it);
+//	printf("\n");
+//	sort(foo.begin(),foo.end());
+//	printf("after sort: "); for (vector<int>::iterator it = foo.begin(); it != foo.end(); it++) printf("%d ",*it);
+//	printf("\n");
+//	uniquify(foo);
+//	printf("after uniquify: "); for (vector<int>::iterator it = foo.begin(); it != foo.end(); it++) printf("%d ",*it);
+//	printf("\n");
+//	rollLeft(foo);
+//	printf("after rollLeft: "); for (vector<int>::iterator it = foo.begin(); it != foo.end(); it++) printf("%d ",*it);
+//	printf("\n");
+//}
 
-static void runSomeTests()
-{
-	vector<int> foo;
-	foo.push_back(7);
-	foo.push_back(19);
-	foo.push_back(7);
-	foo.push_back(19);
-	foo.push_back(5);
-	foo.push_back(4);
-	foo.push_back(0);
-	foo.push_back(3);
-	foo.push_back(3);
-	foo.push_back(2);
-	foo.push_back(0);
-
-	run1test(foo);
-
-	foo.clear();
-	foo.push_back(19);
-	foo.push_back(19);
-	run1test(foo);
-
-	foo.clear();
-	foo.push_back(1);
-	foo.push_back(2);
-	run1test(foo);
-
-	foo.clear();
-	foo.push_back(1);
-	run1test(foo);
-}
+//static void runSomeTests()
+//{
+//	vector<int> foo;
+//	foo.push_back(7);
+//	foo.push_back(19);
+//	foo.push_back(7);
+//	foo.push_back(19);
+//	foo.push_back(5);
+//	foo.push_back(4);
+//	foo.push_back(0);
+//	foo.push_back(3);
+//	foo.push_back(3);
+//	foo.push_back(2);
+//	foo.push_back(0);
+//
+//	run1test(foo);
+//
+//	foo.clear();
+//	foo.push_back(19);
+//	foo.push_back(19);
+//	run1test(foo);
+//
+//	foo.clear();
+//	foo.push_back(1);
+//	foo.push_back(2);
+//	run1test(foo);
+//
+//	foo.clear();
+//	foo.push_back(1);
+//	run1test(foo);
+//}

@@ -56,13 +56,13 @@ double pat_timef()
 	return tv.tv_usec / 1000000.0 + tv.tv_sec;
 }
 
-double pat_elapsedf()
-{
-	static double start = 0;
-	double now = pat_timef();
-	if (start == 0) start = now;
-	return now - start;
-}
+//double pat_elapsedf()
+//{
+//	static double start = 0;
+//	double now = pat_timef();
+//	if (start == 0) start = now;
+//	return now - start;
+//}
 
 
 // ip address is in network order;  return as dotted string.
@@ -99,34 +99,34 @@ EXPORT bool ip_addr_crack(const char *input,uint32_t *paddr, uint32_t *pmask)
 	return true;
 }
 
-EXPORT char *ip_sockaddr2a(void * /*struct sockaddr * */ sap,char *buf)
-{
-	static char sbuf[100];
-	if (buf == NULL) { buf = sbuf;}
-	struct sockaddr_in *to = (struct sockaddr_in*)sap;
-	sprintf(buf,"proto=%d%s port=%d ip=%s",
-		ntohs(to->sin_family),
-		to->sin_family == AF_INET ? "(AF_INET)" : "",
-		ntohs(to->sin_port),
-		ip_ntoa(to->sin_addr.s_addr,NULL));
-	return buf;
-}
+//EXPORT char *ip_sockaddr2a(void * /*struct sockaddr * */ sap,char *buf)
+//{
+//	static char sbuf[100];
+//	if (buf == NULL) { buf = sbuf;}
+//	struct sockaddr_in *to = (struct sockaddr_in*)sap;
+//	sprintf(buf,"proto=%d%s port=%d ip=%s",
+//		ntohs(to->sin_family),
+//		to->sin_family == AF_INET ? "(AF_INET)" : "",
+//		ntohs(to->sin_port),
+//		ip_ntoa(to->sin_addr.s_addr,NULL));
+//	return buf;
+//}
 
 // Add an address to the interface.  ifname is like "eth0" or "tun1"
 // You have to be root to do this.
 // Note that if you want to bind to a non-local address must set the ip_nonlocal_bind
 // kernel option set in /proc.  Update: that did not work, so use ip_addr_add()
 // on the ethernet card if you want to send directly to the machine.
-EXPORT int ip_add_addr(char *ifname, int32_t ipaddr, int maskbits)
-{
-	char fulladdr[100];
-	sprintf(fulladdr,"%s/%d",ip_ntoa(ipaddr,NULL),maskbits);
-	if (fork() == 0) {
-		execl("/sbin/ip","ip","addr","add",fulladdr,"dev",ifname,NULL);
-		exit(0);	// Just in case.
-	}
-	return 0;
-}
+//EXPORT int ip_add_addr(char *ifname, int32_t ipaddr, int maskbits)
+//{
+//	char fulladdr[100];
+//	sprintf(fulladdr,"%s/%d",ip_ntoa(ipaddr,NULL),maskbits);
+//	if (fork() == 0) {
+//		execl("/sbin/ip","ip","addr","add",fulladdr,"dev",ifname,NULL);
+//		exit(0);	// Just in case.
+//	}
+//	return 0;
+//}
 
 EXPORT const char *ip_proto_name(int ipproto)
 {

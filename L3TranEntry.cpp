@@ -22,7 +22,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "ControlCommon.h"
+//#include "ControlCommon.h"
 #include "L3TranEntry.h"
 #include "L3MMLayer.h"
 
@@ -37,7 +37,7 @@
 
 #include "Peering.h"
 
-#include <sqlite3.h>
+//#include <sqlite3.h>
 #include "sqlite3util.h"
 
 //#include <SIPEngine.h>
@@ -629,10 +629,10 @@ L2LogicalChannel* TranEntry::getL2Channel() const
 
 
 // This is used after the channel() is changed from SDCCH to to TCHFACCH just to be safe.
-L3LogicalChannel* TranEntry::getTCHFACCH() {
-	devassert(channel()->chtype()==FACCHType);	// This is the type returned by the TCHFACCHLogicalChannel, even though it is TCH too.
-	return channel();
-}
+//L3LogicalChannel* TranEntry::getTCHFACCH() {
+//	devassert(channel()->chtype()==FACCHType);	// This is the type returned by the TCHFACCHLogicalChannel, even though it is TCH too.
+//	return channel();
+//}
 
 
 
@@ -671,26 +671,26 @@ void TranEntryProtected::setGSMState(CallState wState)
 #endif
 }
 
-SIP::SipState TranEntry::echoSipState(SIP::SipState state) const
-{
-	// Caller should hold mLock.
-	if (mPrevSipState==state) return state;
-	mPrevSipState = state;
-
-	const char* stateString = SIP::SipStateString(state);
-	devassert(stateString);
-
-#if EXTERNAL_TRANSACTION_TABLE
-	unsigned now = time(NULL);
-	char query[150];
-	sprintf(query,
-		"UPDATE TRANSACTION_TABLE SET SIPSTATE='%s',CHANGED=%u WHERE ID=%u",
-		stateString,now,tranID());
-	runQuery(query);
-#endif
-
-	return state;
-}
+//SIP::SipState TranEntry::echoSipState(SIP::SipState state) const
+//{
+//	// Caller should hold mLock.
+//	if (mPrevSipState==state) return state;
+//	mPrevSipState = state;
+//
+//	const char* stateString = SIP::SipStateString(state);
+//	devassert(stateString);
+//
+//#if EXTERNAL_TRANSACTION_TABLE
+//	unsigned now = time(NULL);
+//	char query[150];
+//	sprintf(query,
+//		"UPDATE TRANSACTION_TABLE SET SIPSTATE='%s',CHANGED=%u WHERE ID=%u",
+//		stateString,now,tranID());
+//	runQuery(query);
+//#endif
+//
+//	return state;
+//}
 
 
 
@@ -822,33 +822,33 @@ string TranEntry::handoverString(string peer,string cause) const
 	return os.str();
 }
 
-void NewTransactionTable::ttInit()
-{
-	//if (! l3rewrite()) return;		// Only one of TransactionTable::init or NewTransactionTable::ttInit
-	LOG(DEBUG);
-	// This assumes the main application uses sdevrandom.
-	//mIDCounter = random();
-	mIDCounter = 100;	// pat changed.  0 is reserved.  Start it high enough so it cannot possibly be confused with an L3TI.
-
-#if EXTERNAL_TRANSACTION_TABLE
-	// Connect to the database.
-	const char *path = gConfig.getStr("Control.Reporting.TransactionTable").c_str();
-	int rc = sqlite3_open(path,&mDB);
-	if (rc) {
-		LOG(ALERT) << "Cannot open Transaction Table database at " << path << ": " << sqlite3_errmsg(mDB);
-		sqlite3_close(mDB);
-		mDB = NULL;
-		return;
-	}
-	// Create a new table, if needed.
-	if (!sqlite3_command(mDB,createNewTransactionTable)) {
-		LOG(ALERT) << "Cannot create Transaction Table";
-	}
-	// Clear any previous entires.
-	if (!sqlite3_command(gNewTransactionTable.getDB(),"DELETE FROM TRANSACTION_TABLE"))
-		LOG(WARNING) << "cannot clear previous transaction table";
-#endif
-}
+//void NewTransactionTable::ttInit()
+//{
+//	//if (! l3rewrite()) return;		// Only one of TransactionTable::init or NewTransactionTable::ttInit
+//	LOG(DEBUG);
+//	// This assumes the main application uses sdevrandom.
+//	//mIDCounter = random();
+//	mIDCounter = 100;	// pat changed.  0 is reserved.  Start it high enough so it cannot possibly be confused with an L3TI.
+//
+//#if EXTERNAL_TRANSACTION_TABLE
+//	// Connect to the database.
+//	const char *path = gConfig.getStr("Control.Reporting.TransactionTable").c_str();
+//	int rc = sqlite3_open(path,&mDB);
+//	if (rc) {
+//		LOG(ALERT) << "Cannot open Transaction Table database at " << path << ": " << sqlite3_errmsg(mDB);
+//		sqlite3_close(mDB);
+//		mDB = NULL;
+//		return;
+//	}
+//	// Create a new table, if needed.
+//	if (!sqlite3_command(mDB,createNewTransactionTable)) {
+//		LOG(ALERT) << "Cannot create Transaction Table";
+//	}
+//	// Clear any previous entires.
+//	if (!sqlite3_command(gNewTransactionTable.getDB(),"DELETE FROM TRANSACTION_TABLE"))
+//		LOG(WARNING) << "cannot clear previous transaction table";
+//#endif
+//}
 
 
 
@@ -895,13 +895,13 @@ bool TranEntry::teIsTalking()
 	return false;
 }
 
-bool NewTransactionTable::ttIsTalking(TranEntryId tranid)
-{
-	bool result = false;
-	ScopedLock lock(mttLock,__FILE__,__LINE__);
-	if (TranEntry *tran = ttFindById(tranid)) { result = tran->teIsTalking(); }
-	return result;
-}
+//bool NewTransactionTable::ttIsTalking(TranEntryId tranid)
+//{
+//	bool result = false;
+//	ScopedLock lock(mttLock,__FILE__,__LINE__);
+//	if (TranEntry *tran = ttFindById(tranid)) { result = tran->teIsTalking(); }
+//	return result;
+//}
 
 TranEntry* NewTransactionTable::ttFindById(TranEntryId key)
 {
@@ -936,16 +936,16 @@ bool NewTransactionTable::ttRemove(TranEntryId key)
 
 // Return true if we found it, or false if not found.
 // This is called from a separate thread, so we set the flag and wait for the service loop to handle it.
-bool NewTransactionTable::ttTerminate(TranEntryId tid, L3Cause::BSSCause cause)
-{
-	ScopedLock lock(mttLock,__FILE__,__LINE__);
-	NewTransactionMap::iterator itr = mTable.find(tid);
-	if (itr==mTable.end()) { return false; }
-	TranEntry *tran = itr->second;
-	ScopedLock lock2(tran->mAnotherLock,__FILE__,__LINE__);
-	tran->mTerminationRequested = cause;
-	return true;
-}
+//bool NewTransactionTable::ttTerminate(TranEntryId tid, L3Cause::BSSCause cause)
+//{
+//	ScopedLock lock(mttLock,__FILE__,__LINE__);
+//	NewTransactionMap::iterator itr = mTable.find(tid);
+//	if (itr==mTable.end()) { return false; }
+//	TranEntry *tran = itr->second;
+//	ScopedLock lock2(tran->mAnotherLock,__FILE__,__LINE__);
+//	tran->mTerminationRequested = cause;
+//	return true;
+//}
 
 // Does the TranEntry referenced by this id still pointer to its SipDialog?
 // We use the TranEntryId so we can delete the TranEntry completely separately from the SipDialog.
@@ -1106,13 +1106,13 @@ void NewTransactionTable::ttAddMessage(TranEntryId tranid,SIP::DialogMessage *dm
 	}
 }
 
-CallState NewTransactionTable::ttGetGSMStateById(TranEntryId tranid)
-{
-	ScopedLock lock(mttLock,__FILE__,__LINE__);
-	TranEntry *tran = ttFindById(tranid);
-	CallState result = tran ? tran->getGSMState() : CCState::NullState;
-	return result;
-}
+//CallState NewTransactionTable::ttGetGSMStateById(TranEntryId tranid)
+//{
+//	ScopedLock lock(mttLock,__FILE__,__LINE__);
+//	TranEntry *tran = ttFindById(tranid);
+//	CallState result = tran ? tran->getGSMState() : CCState::NullState;
+//	return result;
+//}
 
 // This is an external interface so we dont have to include L3TranEntry.h just to access this function.
 void NewTransactionTable_ttAddMessage(TranEntryId tranid,SIP::DialogMessage *dmsg)
@@ -1211,25 +1211,25 @@ size_t NewTransactionTable::dump(ostream& os, bool showAll) const
 }
 
 
-TranEntryId NewTransactionTable::findLongestCall()
-{
-	ScopedLock lock(mttLock,__FILE__,__LINE__);
-	//clearDeadEntries();
-	long longTime = 0;
-	NewTransactionMap::iterator longCall = mTable.end();
-	for (NewTransactionMap::iterator itr = mTable.begin(); itr!=mTable.end(); ++itr) {
-		if (itr->second->deadOrRemoved()) continue;
-		if (!(itr->second->channel())) continue;
-		if (itr->second->getGSMState() != CCState::Active) continue;
-		long runTime = itr->second->stateAge();
-		if (runTime > longTime) {
-			runTime = longTime;
-			longCall = itr;
-		}
-	}
-	if (longCall == mTable.end()) return 0;
-	return longCall->second->tranID();
-}
+//TranEntryId NewTransactionTable::findLongestCall()
+//{
+//	ScopedLock lock(mttLock,__FILE__,__LINE__);
+//	//clearDeadEntries();
+//	long longTime = 0;
+//	NewTransactionMap::iterator longCall = mTable.end();
+//	for (NewTransactionMap::iterator itr = mTable.begin(); itr!=mTable.end(); ++itr) {
+//		if (itr->second->deadOrRemoved()) continue;
+//		if (!(itr->second->channel())) continue;
+//		if (itr->second->getGSMState() != CCState::Active) continue;
+//		long runTime = itr->second->stateAge();
+//		if (runTime > longTime) {
+//			runTime = longTime;
+//			longCall = itr;
+//		}
+//	}
+//	if (longCall == mTable.end()) return 0;
+//	return longCall->second->tranID();
+//}
 
 /**
 	Return an even UDP port number for the RTP even/odd pair.
@@ -1729,11 +1729,11 @@ void writePrivateHeaders(SipMessage *msg, const L3LogicalChannel *l3chan)
 	// and make a second P-Preferred-Identity header.
 }
 
-void TranInit()
-{
-	SipCallbacks::setcallback_ttAddMessage( & NewTransactionTable_ttAddMessage);
-	SipCallbacks::setcallback_writePrivateHeaders( & writePrivateHeaders);
-}
+//void TranInit()
+//{
+//	SipCallbacks::setcallback_ttAddMessage( & NewTransactionTable_ttAddMessage);
+//	SipCallbacks::setcallback_writePrivateHeaders( & writePrivateHeaders);
+//}
 
 // Look up the phone number, if any, passed to us from the Registrar when this imsi registered.
 static string lookupPhoneNumber(string imsi)

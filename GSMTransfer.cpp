@@ -94,42 +94,42 @@ ostream& GSM::operator<<(ostream& os, const L2Header::FrameFormat val)
 
 
 
-size_t N201(ChannelType wChanType, L2Header::FrameFormat wFormat)
-{
-	// Number of payload bytes in the L2Frame.
-	// GSM 04.06 5.8.3
-	switch (wFormat) {
-		case L2Header::FmtA:
-		case L2Header::FmtB:
-			switch (wChanType) {
-				case SACCHType: return 18;
-				case FACCHType:
-				case SDCCHType: return 20;
-				default: abort();
-			}
-		case L2Header::FmtBbis:
-			// We count L2 pseudolength as part of the header.
-			switch (wChanType) {
-				case BCCHType:
-				case CCCHType: return 22;
-				default: abort();
-			}
-		case L2Header::FmtBter:
-			switch (wChanType) {
-				case SACCHType: return 21;
-				case FACCHType:
-				case SDCCHType: return 23;
-				default: abort();
-			}
-		case L2Header::FmtB4:
-			switch (wChanType) {
-				case SACCHType: return 19;
-				default: abort();
-			}
-		default:
-			abort();
-	}
-}
+//size_t N201(ChannelType wChanType, L2Header::FrameFormat wFormat)
+//{
+//	// Number of payload bytes in the L2Frame.
+//	// GSM 04.06 5.8.3
+//	switch (wFormat) {
+//		case L2Header::FmtA:
+//		case L2Header::FmtB:
+//			switch (wChanType) {
+//				case SACCHType: return 18;
+//				case FACCHType:
+//				case SDCCHType: return 20;
+//				default: abort();
+//			}
+//		case L2Header::FmtBbis:
+//			// We count L2 pseudolength as part of the header.
+//			switch (wChanType) {
+//				case BCCHType:
+//				case CCCHType: return 22;
+//				default: abort();
+//			}
+//		case L2Header::FmtBter:
+//			switch (wChanType) {
+//				case SACCHType: return 21;
+//				case FACCHType:
+//				case SDCCHType: return 23;
+//				default: abort();
+//			}
+//		case L2Header::FmtB4:
+//			switch (wChanType) {
+//				case SACCHType: return 19;
+//				default: abort();
+//			}
+//		default:
+//			abort();
+//	}
+//}
 
 
 
@@ -297,7 +297,9 @@ L2Frame::L2Frame(const L2Header& header, const BitVector& l3, bool noran)
 	size_t wp = header.write(*this);
 	l3.copyToSegment(*this,wp);
 	// FIXME - figure out why randomizeFiller doesn't like the "noran" headers
-	if (gConfig.getBool("GSM.Cipher.ScrambleFiller") && !noran) randomizeFiller(header);
+    // FIXME: Bypassing the dumb config system...
+	//if (gConfig.getBool("GSM.Cipher.ScrambleFiller") && !noran) randomizeFiller(header);
+    if (false && !noran) randomizeFiller(header);
 }
 
 
@@ -306,7 +308,9 @@ L2Frame::L2Frame(const L2Header& header)
 {
 	idleFill();
 	header.write(*this);
-	if (gConfig.getBool("GSM.Cipher.ScrambleFiller")) randomizeFiller(header);
+    // FIXME: Bypassing the dumb config system...
+	//if (gConfig.getBool("GSM.Cipher.ScrambleFiller")) randomizeFiller(header);
+    if (false) randomizeFiller(header);
 }
 
 
@@ -384,7 +388,9 @@ const L2Frame& GSM::L2IdleFrame()
 		idleFrame.fillField(8*0,3,8);		// address
 		idleFrame.fillField(8*1,3,8);		// control
 		idleFrame.fillField(8*2,1,8);		// length
-		if (gConfig.getBool("GSM.Cipher.ScrambleFiller")) idleFrame.randomizeFiller(8*4);
+        // FIXME: Bypassing the dumb config system...
+		//if (gConfig.getBool("GSM.Cipher.ScrambleFiller")) idleFrame.randomizeFiller(8*4);
+        if (false) idleFrame.randomizeFiller(8*4);
 	}
 	return idleFrame;
 }

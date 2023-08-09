@@ -114,17 +114,17 @@ ostream& operator<<(std::ostream& os, std::ostringstream& ss)
 	return os << ss.str();
 }
 
-ostream &osprintf(std::ostream &os, const char *fmt, ...)
-{
-	va_list ap;
-	char buf[300];
-	va_start(ap,fmt);
-	int n = vsnprintf(buf,300,fmt,ap);
-	va_end(ap);
-	if (n >= (300-4)) { strcpy(&buf[(300-4)],"..."); }
-	os << buf;
-	return os;
-}
+//ostream &osprintf(std::ostream &os, const char *fmt, ...)
+//{
+//	va_list ap;
+//	char buf[300];
+//	va_start(ap,fmt);
+//	int n = vsnprintf(buf,300,fmt,ap);
+//	va_end(ap);
+//	if (n >= (300-4)) { strcpy(&buf[(300-4)],"..."); }
+//	os << buf;
+//	return os;
+//}
 
 string format(const char *fmt, ...)
 {
@@ -214,20 +214,20 @@ int myscanf(const char *str, const char *fmt, string *s1, string *s2)
 	}
 	return n;
 }
-int myscanf(const char *str, const char *fmt, string *s1, string *s2, string *s3)
-{
-	int maxlen = strlen(str)+1;
-	char *a1 = (char*)alloca(maxlen);
-	char *a2 = (char*)alloca(maxlen);
-	char *a3 = (char*)alloca(maxlen);
-	int n = sscanf(str,fmt,a1,a2,a3);
-	switch (n) {
-	case 3: s3->assign(a3);
-	case 2: s2->assign(a2);
-	case 1: s1->assign(a1);
-	}
-	return n;
-}
+//int myscanf(const char *str, const char *fmt, string *s1, string *s2, string *s3)
+//{
+//	int maxlen = strlen(str)+1;
+//	char *a1 = (char*)alloca(maxlen);
+//	char *a2 = (char*)alloca(maxlen);
+//	char *a3 = (char*)alloca(maxlen);
+//	int n = sscanf(str,fmt,a1,a2,a3);
+//	switch (n) {
+//	case 3: s3->assign(a3);
+//	case 2: s2->assign(a2);
+//	case 1: s1->assign(a1);
+//	}
+//	return n;
+//}
 int myscanf(const char *str, const char *fmt, string *s1, string *s2, string *s3, string *s4)
 {
 	int maxlen = strlen(str)+1;
@@ -382,21 +382,21 @@ int cstrSplit(char *in, char **pargv,int maxargc, const char *splitchars)
 
 // Return pointer to the nth (1 for first) space-separated non-empty argument from this string, and length in plength.
 // Note that strtok is not thread safe.
-char *cstrGetArg(const char *in, int nth, unsigned *length)
-{
-	const char *result, *cp = in;
-	while (*cp && nth-- > 0) {
-		while (*cp && isspace(*cp)) { cp++; }
-		result = cp;
-		while (*cp && !isspace(*cp)) { cp++; }
-		if (nth == 0) {
-			*length = cp - result;
-			// remove the ever-to-be-hated const for the convenience of our callers.
-			return *length ? const_cast<char*>(result) : NULL;
-		}
-	}
-	return NULL;
-}
+//char *cstrGetArg(const char *in, int nth, unsigned *length)
+//{
+//	const char *result, *cp = in;
+//	while (*cp && nth-- > 0) {
+//		while (*cp && isspace(*cp)) { cp++; }
+//		result = cp;
+//		while (*cp && !isspace(*cp)) { cp++; }
+//		if (nth == 0) {
+//			*length = cp - result;
+//			// remove the ever-to-be-hated const for the convenience of our callers.
+//			return *length ? const_cast<char*>(result) : NULL;
+//		}
+//	}
+//	return NULL;
+//}
 
 
 vector<string>& stringSplit(vector<string> &result,const char *input)
@@ -418,54 +418,54 @@ vector<string>& stringSplit(vector<string> &result,const char *input)
 // Column size is determined from the columns.
 // An entry of "_" is suppressed.
 
-void printPrettyTable(prettyTable_t &tab, ostream&os, bool tabSeparated)
-{
-	LOG(DEBUG);
-	const unsigned maxcols = 30;
-	// Determine the maximum width of each column.
-	int width[maxcols]; memset(width,0,sizeof(width));
-	if (!tabSeparated) {
-	  for (prettyTable_t::iterator it = tab.begin(); it != tab.end(); ++it) {
-		vector<string> &row = *it;
-		for (unsigned col = 0; col<maxcols && col<row.size(); col++) {
-			int colwidth = row[col].size();
-			if (colwidth > 100) colwidth = 100;
-			width[col] = max(width[col],colwidth);
-		}
-	  }
-	}
-	// Now print it.
-	for (unsigned nrow = 0; nrow < tab.size(); nrow++) {
-		vector<string> &row = tab[nrow];
-
-		// DEBUG: print the column widths.
-		if (0 && IS_LOG_LEVEL(DEBUG) && nrow == 0) {
-			for (unsigned col = 0; col<maxcols && col<row.size(); col++) {
-				os << format("%-*s ",width[col],format("%d",width[col]));
-			}
-			os << "\n";
-		}
-
-		for (unsigned col = 0; col<maxcols && col<row.size(); col++) {
-			char buf[252];
-			const char *val = row[col].c_str();
-			if (0 == strcmp(val,"_")) { val = ""; }	// Dont print "_", used to easily format the header fields.
-			if (tabSeparated) {
-				if (col) os << "\t";
-				os << val;
-			} else {
-				// (pat) This code centered the headers, but I took it out.
-				//int pad = 0;
-				//if (nrow < 2) { pad = (width[col] - strlen(val)) / 2; }
-				//sprintf(buf,"%*s%.*s ",(width[col]-pad),val,pad,"                         ");
-				snprintf(buf,250,"%-*s ",width[col],val);
-				os << buf;
-			}
-		}
-		os << "\n";
-	}
-	os << endl;
-}
+//void printPrettyTable(prettyTable_t &tab, ostream&os, bool tabSeparated)
+//{
+//	LOG(DEBUG);
+//	const unsigned maxcols = 30;
+//	// Determine the maximum width of each column.
+//	int width[maxcols]; memset(width,0,sizeof(width));
+//	if (!tabSeparated) {
+//	  for (prettyTable_t::iterator it = tab.begin(); it != tab.end(); ++it) {
+//		vector<string> &row = *it;
+//		for (unsigned col = 0; col<maxcols && col<row.size(); col++) {
+//			int colwidth = row[col].size();
+//			if (colwidth > 100) colwidth = 100;
+//			width[col] = max(width[col],colwidth);
+//		}
+//	  }
+//	}
+//	// Now print it.
+//	for (unsigned nrow = 0; nrow < tab.size(); nrow++) {
+//		vector<string> &row = tab[nrow];
+//
+//		// DEBUG: print the column widths.
+//		if (0 && IS_LOG_LEVEL(DEBUG) && nrow == 0) {
+//			for (unsigned col = 0; col<maxcols && col<row.size(); col++) {
+//				os << format("%-*s ",width[col],format("%d",width[col]));
+//			}
+//			os << "\n";
+//		}
+//
+//		for (unsigned col = 0; col<maxcols && col<row.size(); col++) {
+//			char buf[252];
+//			const char *val = row[col].c_str();
+//			if (0 == strcmp(val,"_")) { val = ""; }	// Dont print "_", used to easily format the header fields.
+//			if (tabSeparated) {
+//				if (col) os << "\t";
+//				os << val;
+//			} else {
+//				// (pat) This code centered the headers, but I took it out.
+//				//int pad = 0;
+//				//if (nrow < 2) { pad = (width[col] - strlen(val)) / 2; }
+//				//sprintf(buf,"%*s%.*s ",(width[col]-pad),val,pad,"                         ");
+//				snprintf(buf,250,"%-*s ",width[col],val);
+//				os << buf;
+//			}
+//		}
+//		os << "\n";
+//	}
+//	os << endl;
+//}
 
 
 
@@ -515,21 +515,21 @@ string stringcat(string a, string b, string c, string d, string e, string f, str
 
 static string emptystring("");
 
-string stringcat(string a, string b) {
-	return stringcat(a,b,emptystring,emptystring,emptystring,emptystring,emptystring);
-}
-string stringcat(string a, string b, string c) {
-	return stringcat(a,b,c,emptystring,emptystring,emptystring,emptystring);
-}
-string stringcat(string a, string b, string c, string d) {
-	return stringcat(a,b,c,d,emptystring,emptystring,emptystring);
-}
-string stringcat(string a, string b, string c, string d, string e) {
-	return stringcat(a,b,c,d,e,emptystring,emptystring);
-}
-string stringcat(string a, string b, string c, string d, string e, string f) {
-	return stringcat(a,b,c,d,e,f,emptystring);
-}
+//string stringcat(string a, string b) {
+//	return stringcat(a,b,emptystring,emptystring,emptystring,emptystring,emptystring);
+//}
+//string stringcat(string a, string b, string c) {
+//	return stringcat(a,b,c,emptystring,emptystring,emptystring,emptystring);
+//}
+//string stringcat(string a, string b, string c, string d) {
+//	return stringcat(a,b,c,d,emptystring,emptystring,emptystring);
+//}
+//string stringcat(string a, string b, string c, string d, string e) {
+//	return stringcat(a,b,c,d,e,emptystring,emptystring);
+//}
+//string stringcat(string a, string b, string c, string d, string e, string f) {
+//	return stringcat(a,b,c,d,e,f,emptystring);
+//}
 
 void stringToUint(string strRAND, uint64_t *hRAND, uint64_t *lRAND)
 {
@@ -544,44 +544,44 @@ void stringToUint(string strRAND, uint64_t *hRAND, uint64_t *lRAND)
 	ssl >> *lRAND;
 }
 
-string uintToString(uint64_t h, uint64_t l)
-{
-	ostringstream os1;
-	os1.width(16);
-	os1.fill('0');
-	os1 << hex << h;
-	ostringstream os2;
-	os2.width(16);
-	os2.fill('0');
-	os2 << hex << l;
-	ostringstream os3;
-	os3 << os1.str() << os2.str();
-	return os3.str();
-}
+//string uintToString(uint64_t h, uint64_t l)
+//{
+//	ostringstream os1;
+//	os1.width(16);
+//	os1.fill('0');
+//	os1 << hex << h;
+//	ostringstream os2;
+//	os2.width(16);
+//	os2.fill('0');
+//	os2 << hex << l;
+//	ostringstream os3;
+//	os3 << os1.str() << os2.str();
+//	return os3.str();
+//}
 
-string uintToString(uint32_t x)
-{
-	ostringstream os;
-	os.width(8);
-	os.fill('0');
-	os << hex << x;
-	return os.str();
-}
+//string uintToString(uint32_t x)
+//{
+//	ostringstream os;
+//	os.width(8);
+//	os.fill('0');
+//	os << hex << x;
+//	return os.str();
+//}
 
 
 // Return the first n lines of a string.
-string firstlines(string msgstr, int n) {	// n must be >=1
-	size_t pos = msgstr.find('\n');
-	if (pos < msgstr.size()) pos++;
-	//printf("firstlines pos=%d\n",(int)pos);
-	while (--n > 0 && pos < msgstr.size()) {
-		pos = msgstr.find('\n',pos);
-		//printf("firstlines n=%d pos=%d\n",n,(int)pos);
-		if (pos < msgstr.size()) pos++;
-	}
-	//printf("firstlines return n=%d pos=%d\n",n,(int)pos);
-	return msgstr.substr(0,pos);
-}
+//string firstlines(string msgstr, int n) {	// n must be >=1
+//	size_t pos = msgstr.find('\n');
+//	if (pos < msgstr.size()) pos++;
+//	//printf("firstlines pos=%d\n",(int)pos);
+//	while (--n > 0 && pos < msgstr.size()) {
+//		pos = msgstr.find('\n',pos);
+//		//printf("firstlines n=%d pos=%d\n",n,(int)pos);
+//		if (pos < msgstr.size()) pos++;
+//	}
+//	//printf("firstlines return n=%d pos=%d\n",n,(int)pos);
+//	return msgstr.substr(0,pos);
+//}
 
 static string backtrace_failed = "backtrace failed";
 
@@ -726,43 +726,43 @@ static unsigned tohex1(unsigned data)
 // Decode character data to binary data as per encodingArg which may be "binary", "hex", "base64"
 // In the "binary" case, the data is just copied verbatim.
 // On return the errorMessage will have a non-zero size if an error occurred.
-string decodeToString(const char *buf, unsigned buflen, string encodingArg, string &errorMessage)
-{
-	stringCaseInsensitive encoding(encodingArg);
-	if (encoding == "binary") {
-		return string(buf,buflen);
-	} else if (encoding == "hex" || encoding == "base16") {
-		return hexDecodeToString((const unsigned char *)buf, buflen, errorMessage);
-	} else if (encoding == "base64") {
-		return base64DecodeToString((const unsigned char *)buf,buflen,errorMessage);
-	} else {
-		errorMessage = "Unexpected encoding specified:" + encodingArg;
-		return "";
-	}
-}
+//string decodeToString(const char *buf, unsigned buflen, string encodingArg, string &errorMessage)
+//{
+//	stringCaseInsensitive encoding(encodingArg);
+//	if (encoding == "binary") {
+//		return string(buf,buflen);
+//	} else if (encoding == "hex" || encoding == "base16") {
+//		return hexDecodeToString((const unsigned char *)buf, buflen, errorMessage);
+//	} else if (encoding == "base64") {
+//		return base64DecodeToString((const unsigned char *)buf,buflen,errorMessage);
+//	} else {
+//		errorMessage = "Unexpected encoding specified:" + encodingArg;
+//		return "";
+//	}
+//}
 
 // Encode binary data into a character string as per encodingArg which may be "binary", "hex", "base64".
 // In the "binary" case, the data is just copied verbatim.
 // On return the errorMessage will have a non-zero size if an error occurred.
-string encodeToString(const char *data, unsigned datalen, string encodingArg, string &errorMessage)
-{
-	stringCaseInsensitive encoding(encodingArg);
-	if (encoding == "binary") {
-		return string(data,datalen);
-	} else if (encoding == "hex" || encoding == "base16") {
-		string result;
-		result.reserve(datalen*2);
-		for (const char *dp = data; dp < &data[datalen]; dp++) {
-			result.push_back(tohex1((*dp >> 4) & 0xf));
-			result.push_back(tohex1(*dp & 0xf));
-		}
-		return result;
-	} else if (encoding == "base64") {
-		return base64EncodeToString((const unsigned char *)data,datalen);
-	} else {
-		errorMessage = "Unexpected encoding specified:" + encodingArg;
-		return "";
-	}
-}
+//string encodeToString(const char *data, unsigned datalen, string encodingArg, string &errorMessage)
+//{
+//	stringCaseInsensitive encoding(encodingArg);
+//	if (encoding == "binary") {
+//		return string(data,datalen);
+//	} else if (encoding == "hex" || encoding == "base16") {
+//		string result;
+//		result.reserve(datalen*2);
+//		for (const char *dp = data; dp < &data[datalen]; dp++) {
+//			result.push_back(tohex1((*dp >> 4) & 0xf));
+//			result.push_back(tohex1(*dp & 0xf));
+//		}
+//		return result;
+//	} else if (encoding == "base64") {
+//		return base64EncodeToString((const unsigned char *)data,datalen);
+//	} else {
+//		errorMessage = "Unexpected encoding specified:" + encodingArg;
+//		return "";
+//	}
+//}
 
 };	// namespace

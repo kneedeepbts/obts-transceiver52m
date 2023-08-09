@@ -674,17 +674,17 @@ void MSInfo::msReassignChannels()
 	// tbf->mtDeReattach();
 }
 
-unsigned MSInfo::msGetDownlinkQueuedBytes()
-{
-	// Figure out how many bytes stacked up in the queue for this MS.
-	unsigned nbytes = 0;
-	TBF *tbf;
-	RN_MS_FOR_ALL_TBF(this,tbf) {
-		if (tbf->mtDir != RLCDir::Down) continue;
-		nbytes += tbf->engineDownPDUSize();
-	}
-	return nbytes;
-}
+//unsigned MSInfo::msGetDownlinkQueuedBytes()
+//{
+//	// Figure out how many bytes stacked up in the queue for this MS.
+//	unsigned nbytes = 0;
+//	TBF *tbf;
+//	RN_MS_FOR_ALL_TBF(this,tbf) {
+//		if (tbf->mtDir != RLCDir::Down) continue;
+//		nbytes += tbf->engineDownPDUSize();
+//	}
+//	return nbytes;
+//}
 
 // The MS is in PacketTransfer mode if any TBFs are currently running, stalled or not.
 RROperatingMode::type MSInfo::getRROperatingMode()
@@ -1073,58 +1073,58 @@ void MSStat::msStatDump(const char *indent, std::ostream &os)
 	os << "\n";
 }
 
-void MSInfo::msDump(std::ostream&os, SGSN::PrintOptions options)
-{
-	int i;
-	RROperatingMode::type rrmode = getRROperatingMode();
-	os << this		// Dumps the operator<< value, which is sprintf(MS#%d,msDebugId)
-		//<< LOGHEX(msTlli)		// The TLLI is in the default id now, so do not reprint it.
-		<< LOGVAR(rrmode)
-		<< " Bytes:" << msBytesUp << "up/" << msBytesDown << "down"
-		// The TrafficMetric is total number of blocks sent and received,
-		// decayed by 1/2 every 24 blocks, so max is 48/channel.
-		// The metric will be > 100% if multiple channels are used simultaneously.
-		// Note: channel = uplink or downlink, so single slot MS with uplink and downlink TBFs
-		// could reach 200%.  Even a one-way TBF uses some of the other direction so can exceed 100%.
-		//<< format(" Utilization=%.1f%%",100.0 * msTrafficMetric / 48.0)
-		<< " Utilization=" << fmtfloat2(100.0 * msTrafficMetric / 48.0) << "%"
-		<< "\n";
-	os << "\t"; sgsnPrint(msTlli,options | SGSN::printNoMsId,os);
-	dumpSignalQuality(os);
-	msStatDump("\t",os);
-
-	if (!(options & SGSN::printVerbose)) {return;}
-
-	// In case the queue is completely stalled or suspended, add a new data point for
-	// the current max delay if it is greater.
-	if (msDownlinkQueue.size()) {
-		double curage = msDownlinkQOldest.elapsed()/1000.0;
-		if (curage > msDownlinkQDelay.getCurrent()) { msDownlinkQDelay.addPoint(curage); }
-	}
-	os << "\t" << LOGVAR2("DownlinkQ:bytes",msDownlinkQStat)
-		<< LOGVAR2("delay",msDownlinkQDelay)
-		<< "\n";
-
-	os << "\t TBFs:" <<LOGVAR2("total",msCountTbfs);
-	if (msCountTbfFail) { os<<LOGVAR2("failed",msCountTbfFail); }
-	if (msCountTbfNoConnect) { os<<LOGVAR2("NC",msCountTbfNoConnect); }
-	os <<"\n";
-
-	os << "\t current=(";
-		TBF *tbf;
-		RN_MS_FOR_ALL_TBF(this,tbf) {
-			//os << " "<<tbf << (tbf->mtDir == RLCDir::Up ? "(up)" : "(down)");
-			os << " "<<tbf <<tbf->mtDir;
-		}
-	os << ")\n";
-
-	os << "\t USFs=(";
-		for (i = 0; i < 8; i++) { os << " " << msUSFs[i]; }
-	os << " )\n";
-
-	os << "\t"; msDumpChannels(os); os << "\n";
-	msDumpCommon(os);
-}
+//void MSInfo::msDump(std::ostream&os, SGSN::PrintOptions options)
+//{
+//	int i;
+//	RROperatingMode::type rrmode = getRROperatingMode();
+//	os << this		// Dumps the operator<< value, which is sprintf(MS#%d,msDebugId)
+//		//<< LOGHEX(msTlli)		// The TLLI is in the default id now, so do not reprint it.
+//		<< LOGVAR(rrmode)
+//		<< " Bytes:" << msBytesUp << "up/" << msBytesDown << "down"
+//		// The TrafficMetric is total number of blocks sent and received,
+//		// decayed by 1/2 every 24 blocks, so max is 48/channel.
+//		// The metric will be > 100% if multiple channels are used simultaneously.
+//		// Note: channel = uplink or downlink, so single slot MS with uplink and downlink TBFs
+//		// could reach 200%.  Even a one-way TBF uses some of the other direction so can exceed 100%.
+//		//<< format(" Utilization=%.1f%%",100.0 * msTrafficMetric / 48.0)
+//		<< " Utilization=" << fmtfloat2(100.0 * msTrafficMetric / 48.0) << "%"
+//		<< "\n";
+//	os << "\t"; sgsnPrint(msTlli,options | SGSN::printNoMsId,os);
+//	dumpSignalQuality(os);
+//	msStatDump("\t",os);
+//
+//	if (!(options & SGSN::printVerbose)) {return;}
+//
+//	// In case the queue is completely stalled or suspended, add a new data point for
+//	// the current max delay if it is greater.
+//	if (msDownlinkQueue.size()) {
+//		double curage = msDownlinkQOldest.elapsed()/1000.0;
+//		if (curage > msDownlinkQDelay.getCurrent()) { msDownlinkQDelay.addPoint(curage); }
+//	}
+//	os << "\t" << LOGVAR2("DownlinkQ:bytes",msDownlinkQStat)
+//		<< LOGVAR2("delay",msDownlinkQDelay)
+//		<< "\n";
+//
+//	os << "\t TBFs:" <<LOGVAR2("total",msCountTbfs);
+//	if (msCountTbfFail) { os<<LOGVAR2("failed",msCountTbfFail); }
+//	if (msCountTbfNoConnect) { os<<LOGVAR2("NC",msCountTbfNoConnect); }
+//	os <<"\n";
+//
+//	os << "\t current=(";
+//		TBF *tbf;
+//		RN_MS_FOR_ALL_TBF(this,tbf) {
+//			//os << " "<<tbf << (tbf->mtDir == RLCDir::Up ? "(up)" : "(down)");
+//			os << " "<<tbf <<tbf->mtDir;
+//		}
+//	os << ")\n";
+//
+//	os << "\t USFs=(";
+//		for (i = 0; i < 8; i++) { os << " " << msUSFs[i]; }
+//	os << " )\n";
+//
+//	os << "\t"; msDumpChannels(os); os << "\n";
+//	msDumpCommon(os);
+//}
 
 string MSInfo::id() const
 {

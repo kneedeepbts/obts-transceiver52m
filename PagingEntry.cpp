@@ -53,12 +53,12 @@ L3MobileIdentity NewPagingEntry::getMobileId()
 	}
 }
 
-unsigned NewPagingEntry::getImsiMod1000() const
-{
-	int len = mImsi.length();
-	if (len < 3) return 0;	// This is bad.
-	return atoi(&mImsi.c_str()[len-3]);
-}
+//unsigned NewPagingEntry::getImsiMod1000() const
+//{
+//	int len = mImsi.length();
+//	if (len < 3) return 0;	// This is bad.
+//	return atoi(&mImsi.c_str()[len-3]);
+//}
 
 void MMGetPages(NewPagingList_t &pages, bool wait)
 {

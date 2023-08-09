@@ -352,10 +352,10 @@ void SipDialogMap::printDialogs(ostream&os)
 //	}
 }
 
-void printDialogs(ostream &os)
-{
-	gSipInterface.printDialogs(os);
-}
+//void printDialogs(ostream &os)
+//{
+//	gSipInterface.printDialogs(os);
+//}
 
 
 
@@ -772,10 +772,10 @@ void MySipInterface::msiInit()
 }
 
 
-void SIPInterfaceStart()
-{
-	gSipInterface.msiInit();
-}
+//void SIPInterfaceStart()
+//{
+//	gSipInterface.msiInit();
+//}
 
 
 };	// namespace SIP

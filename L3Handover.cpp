@@ -19,11 +19,11 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <list>
 
 #define LOG_GROUP LogGroup::Control
-#include "Defines.h"
+//#include "Defines.h"
 #include "ControlCommon.h"
 #include "L3Handover.h"
 #include "L3CallControl.h"

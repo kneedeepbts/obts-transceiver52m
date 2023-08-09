@@ -139,17 +139,17 @@ void SgsnInfo::sirm()
 
 // This is for use by the Command Line Interface
 // Return true on success.
-bool cliSgsnInfoDelete(SgsnInfo *si)
-{
-	ScopedLock lock(sSgsnListMutex);
-	GmmInfo *gmm = si->getGmm();
-	if (gmm && gmm->getSI() == si) {
-		// You cannot delete this si by itself.  Must delete the GmmInfo instead.
-		return false;
-	}
-	si->sirm();
-	return true;
-}
+//bool cliSgsnInfoDelete(SgsnInfo *si)
+//{
+//	ScopedLock lock(sSgsnListMutex);
+//	GmmInfo *gmm = si->getGmm();
+//	if (gmm && gmm->getSI() == si) {
+//		// You cannot delete this si by itself.  Must delete the GmmInfo instead.
+//		return false;
+//	}
+//	si->sirm();
+//	return true;
+//}
 
 // This is the generalized printer to identify an SgsnInfo.
 // The alternate sgsnInfoDump is used only for gmmDump and prints
@@ -255,11 +255,11 @@ static void GmmRemove(GmmInfo *gmm)
 
 
 // This is for use by the Command Line Interface
-void cliGmmDelete(GmmInfo *gmm)
-{
-	ScopedLock lock(sSgsnListMutex);
-	GmmRemove(gmm);
-}
+//void cliGmmDelete(GmmInfo *gmm)
+//{
+//	ScopedLock lock(sSgsnListMutex);
+//	GmmRemove(gmm);
+//}
 
 PdpContext *GmmInfo::getPdp(unsigned nsapi)
 {
@@ -1024,16 +1024,16 @@ static void handleRAUpdateComplete(SgsnInfo *si, L3GmmMsgRAUpdateComplete &racms
 // and I even saw the Blackberry detach and reattach to recover.
 // In either case the MS signals resumption by sending us anything on the uplink.
 // WARNING: This runs in a different thread.
-bool Sgsn::handleGprsSuspensionRequest(uint32_t wTlli,
-	const ByteVector &wraid)	// The Routing Area id.
-{
-	SGSNLOG("Received GPRS SuspensionRequest for"<<LOGHEX2("tlli",wTlli));
-	return false;	// Not handled yet.
-	// TODO:
-	// if sgsn not enabled, return false.
-	// save the channel?
-	// Send the resumption ie in the RR channel release afterward.
-}
+//bool Sgsn::handleGprsSuspensionRequest(uint32_t wTlli,
+//	const ByteVector &wraid)	// The Routing Area id.
+//{
+//	SGSNLOG("Received GPRS SuspensionRequest for"<<LOGHEX2("tlli",wTlli));
+//	return false;	// Not handled yet.
+//	// TODO:
+//	// if sgsn not enabled, return false.
+//	// save the channel?
+//	// Send the resumption ie in the RR channel release afterward.
+//}
 
 // WARNING: This runs in a different thread.
 void Sgsn::notifyGsmActivity(const char *imsi)
@@ -1281,11 +1281,11 @@ SgsnInfo *findSgsnInfoByHandle(uint32_t handle, bool create)
 //}
 
 // Works, but not currently used:
-void MSUEAdapter::sgsnFreePdpAll(uint32_t mshandle)
-{
-	SgsnInfo *si = sgsnGetSgsnInfoByHandle(mshandle,false);
-	if (si) si->freePdpAll(true);
-}
+//void MSUEAdapter::sgsnFreePdpAll(uint32_t mshandle)
+//{
+//	SgsnInfo *si = sgsnGetSgsnInfoByHandle(mshandle,false);
+//	if (si) si->freePdpAll(true);
+//}
 
 // Forces it to exist if it did not already.
 static SgsnInfo *sgsnGetSgsnInfoByHandle(uint32_t mshandle, bool create)
@@ -1688,14 +1688,14 @@ void RabStatus::text(std::ostream &os) const
 	os<<")";
 }
 
-void MSUEAdapter::sgsnPrint(uint32_t mshandle, int options, std::ostream &os)
-{
-	ScopedLock lock(sSgsnListMutex);		// Probably not needed.
-	SgsnInfo *si = sgsnGetSgsnInfoByHandle(mshandle,false);
-	if (!si) { os << " GMM state unknown\n"; return; }
-	GmmInfo *gmm = si->getGmm();	// Must be non-null or we would not be here.
-	if (!gmm) { os << " GMM state unknown\n"; return; }
-	gmmInfoDump(gmm,os,options);
-}
+//void MSUEAdapter::sgsnPrint(uint32_t mshandle, int options, std::ostream &os)
+//{
+//	ScopedLock lock(sSgsnListMutex);		// Probably not needed.
+//	SgsnInfo *si = sgsnGetSgsnInfoByHandle(mshandle,false);
+//	if (!si) { os << " GMM state unknown\n"; return; }
+//	GmmInfo *gmm = si->getGmm();	// Must be non-null or we would not be here.
+//	if (!gmm) { os << " GMM state unknown\n"; return; }
+//	gmmInfoDump(gmm,os,options);
+//}
 
 }; // namespace

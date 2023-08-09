@@ -435,14 +435,14 @@ std::ostream& operator<<(std::ostream&os, const L3LogicalChannel*ch) {
 
 // pat FIXME - Called from CLI so must lock channel.
 // Warning: This is called from the CLI thread.
-void L3LogicalChannel::getTranIds(TranEntryList &tids) const
-{
-	ScopedLock lock(gMMLock,__FILE__,__LINE__);
-	tids.clear();
-	if (const MMContext *set = Unconst(this)->chanGetContext(false)) {
-		set->getTranIds(tids);
-	}
-}
+//void L3LogicalChannel::getTranIds(TranEntryList &tids) const
+//{
+//	ScopedLock lock(gMMLock,__FILE__,__LINE__);
+//	tids.clear();
+//	if (const MMContext *set = Unconst(this)->chanGetContext(false)) {
+//		set->getTranIds(tids);
+//	}
+//}
 
 
 bool L3LogicalChannel::isTCHF() const
@@ -456,16 +456,16 @@ bool L3LogicalChannel::isSDCCH() const
 }
 
 // For use by the CLI.
-void printChansInfo(std::ostream&os)
-{
-	L2ChanList chans;
-	gBTS.getChanVector(chans);
-	for (L2ChanList::iterator it = chans.begin(); it != chans.end(); it++) {
-		L3LogicalChannel *chan = dynamic_cast<L3LogicalChannel*>(*it);
-		os << chan;
-		chan->chanContextText(os);
-		os << endl;
-	}
-}
+//void printChansInfo(std::ostream&os)
+//{
+//	L2ChanList chans;
+//	gBTS.getChanVector(chans);
+//	for (L2ChanList::iterator it = chans.begin(); it != chans.end(); it++) {
+//		L3LogicalChannel *chan = dynamic_cast<L3LogicalChannel*>(*it);
+//		os << chan;
+//		chan->chanContextText(os);
+//		os << endl;
+//	}
+//}
 
 };	// namespace

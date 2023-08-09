@@ -816,21 +816,21 @@ std::ostream& operator<<(std::ostream& os, const MMContext&mmc) { mmc.mmcText(os
 std::ostream& operator<<(std::ostream& os, const MMContext*mmc) { if (mmc) mmc->mmcText(os); else os << "(null Context)"; return os; }
 
 
-void MMContext::getTranIds(TranEntryList &tranlist) const
-{
-	// This is called from the CLI via L3LogicalChannel, which locks the L3LogicalChannel, guaranteeing
-	// that the MMContext is not freed while we are here.  We need to lock this particular MMContext
-	// to avoid changes to mmcTE, but we dont have a private lock in each MMContext, only the global lock,
-	// so we lock that, even though it is way overkill.
-	ScopedLock lock(gMMLock,__FILE__,__LINE__);	// Way overkill, but necessary to lock MMContext.
-	tranlist.clear();
-	for (unsigned ati = TE_first; ati < TE_num; ati++) {
-		if (mmcTE[ati] != NULL) { tranlist.push_back(mmcTE[ati]->tranID()); }
-	}
-	if (mmcMMU) {
-		// TODO
-	}
-}
+//void MMContext::getTranIds(TranEntryList &tranlist) const
+//{
+//	// This is called from the CLI via L3LogicalChannel, which locks the L3LogicalChannel, guaranteeing
+//	// that the MMContext is not freed while we are here.  We need to lock this particular MMContext
+//	// to avoid changes to mmcTE, but we dont have a private lock in each MMContext, only the global lock,
+//	// so we lock that, even though it is way overkill.
+//	ScopedLock lock(gMMLock,__FILE__,__LINE__);	// Way overkill, but necessary to lock MMContext.
+//	tranlist.clear();
+//	for (unsigned ati = TE_first; ati < TE_num; ati++) {
+//		if (mmcTE[ati] != NULL) { tranlist.push_back(mmcTE[ati]->tranID()); }
+//	}
+//	if (mmcMMU) {
+//		// TODO
+//	}
+//}
 
 RefCntPointer<TranEntry> MMContext::mmGetTran(unsigned ati) const
 {
@@ -1101,25 +1101,25 @@ void MMLayer::mmAttachByImsi(L3LogicalChannel *chan, string imsi)
 }
 
 
-bool MMLayer::mmTerminateByImsi(string imsi)
-{
-	ScopedLock lock(gMMLock,__FILE__,__LINE__);
-	MMUser *mmu = mmFindByImsi(imsi,false);
-	if (!mmu) { return false; }	// Not found.
-	MMContext* mmc = mmu->mmuContext;
-	if (!mmc) {
-		// There is no channel, just kill off the MMUser, which will stop paging and cancel the SIP dialogs.
-		mmu->mmuFree(NULL,TermCause::Local(L3Cause::Operator_Intervention));
-		return true;
-	}
-	if (mmc->tsChannel()->chanRunning()) {
-		// Dont call chanClose from here because it sends a message which would block the calling thread.
-		//mmc->tsChannel()->chanClose(L3RRCause::PreemptiveRelease,RELEASE);  DONT DO THIS!
-		// FIXME: We would like to send an RR Release message first.
-		mmc->mmcTerminationRequested = true;
-	}
-	return true;
-}
+//bool MMLayer::mmTerminateByImsi(string imsi)
+//{
+//	ScopedLock lock(gMMLock,__FILE__,__LINE__);
+//	MMUser *mmu = mmFindByImsi(imsi,false);
+//	if (!mmu) { return false; }	// Not found.
+//	MMContext* mmc = mmu->mmuContext;
+//	if (!mmc) {
+//		// There is no channel, just kill off the MMUser, which will stop paging and cancel the SIP dialogs.
+//		mmu->mmuFree(NULL,TermCause::Local(L3Cause::Operator_Intervention));
+//		return true;
+//	}
+//	if (mmc->tsChannel()->chanRunning()) {
+//		// Dont call chanClose from here because it sends a message which would block the calling thread.
+//		//mmc->tsChannel()->chanClose(L3RRCause::PreemptiveRelease,RELEASE);  DONT DO THIS!
+//		// FIXME: We would like to send an RR Release message first.
+//		mmc->mmcTerminationRequested = true;
+//	}
+//	return true;
+//}
 
 // This is the way MMUsers are created from the SIP side.
 void MMLayer::mmAddMT(TranEntry *tran)
@@ -1266,16 +1266,16 @@ void MMLayer::mmGetPages(NewPagingList_t &pages)
 //}
 
 // For use by the CLI: create a copy of the paging list and print it.
-void MMLayer::printPages(ostream &os)
-{
-	// This does not need to lock anything.  The mmGetPages provides locked access to the MMUser list.
-	NewPagingList_t pages;
-	gMMLayer.mmGetPages(pages);
-	for (NewPagingList_t::iterator it = pages.begin(); it != pages.end(); ++it) {
-		NewPagingEntry &pe = *it;
-		os <<pe.text();
-	}
-}
+//void MMLayer::printPages(ostream &os)
+//{
+//	// This does not need to lock anything.  The mmGetPages provides locked access to the MMUser list.
+//	NewPagingList_t pages;
+//	gMMLayer.mmGetPages(pages);
+//	for (NewPagingList_t::iterator it = pages.begin(); it != pages.end(); ++it) {
+//		NewPagingEntry &pe = *it;
+//		os <<pe.text();
+//	}
+//}
 
 // Connect the channel with its MMUser based on the received page.
 // Return true if ok, or false if not found, which will tell caller to release the channel.
@@ -1349,16 +1349,16 @@ string MMLayer::printMMInfo()
 	return ss.str();
 }
 
-void controlInit()
-{
-	LOG(DEBUG);
-    // FIXME: Bypassing the dumb config system...
-	//gTMSITable.tmsiTabOpen(gConfig.getStr("Control.Reporting.TMSITable").c_str());
-    gTMSITable.tmsiTabOpen("/var/run/TMSITable.db");
-	LOG(DEBUG);
-	gNewTransactionTable.ttInit();
-	LOG(DEBUG);
-	TranInit();
-}
+//void controlInit()
+//{
+//	LOG(DEBUG);
+//    // FIXME: Bypassing the dumb config system...
+//	//gTMSITable.tmsiTabOpen(gConfig.getStr("Control.Reporting.TMSITable").c_str());
+//    gTMSITable.tmsiTabOpen("/var/run/TMSITable.db");
+//	LOG(DEBUG);
+//	gNewTransactionTable.ttInit();
+//	LOG(DEBUG);
+//	TranInit();
+//}
 
 };

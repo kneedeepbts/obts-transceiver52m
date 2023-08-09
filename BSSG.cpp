@@ -14,9 +14,9 @@
 */
 #define LOG_GROUP LogGroup::GPRS		// Can set Log.Level.GPRS for debugging
 
-#include "Defines.h"
+//#include "Defines.h"
 #include "GPRSInternal.h"	// For GPRSLOG()
-#include "GSMConfig.h"
+//#include "GSMConfig.h"
 #include "Threads.h"
 #include "BSSGMessages.h"
 #include "BSSG.h"

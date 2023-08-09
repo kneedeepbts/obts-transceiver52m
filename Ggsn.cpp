@@ -13,7 +13,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 */
 
-#include <stdint.h>
+//#include <stdint.h>
 #include <poll.h>
 #include "LLC.h"
 #define GGSN_IMPLEMENTATION 1
@@ -21,7 +21,7 @@
 #include "Sgsn.h"
 #include "Ggsn.h"
 #include "miniggsn.h"
-#include "GSMConfig.h"
+//#include "GSMConfig.h"
 //#include "MSInfo.h"	// To dump MSInfo
 #include "GPRSL3Messages.h"
 #define CASENAME(x) case x: return #x;
@@ -348,16 +348,16 @@ static void setIpAddr(ByteVector &result,mg_con_t *mgp)
 
 // TODO: We have to set the transaction identifier for the PdpContext?
 //void sendPdpDeactivateAll(SgsnInfo *si, unsigned cause) //SmCause::Cause cause)
-void sendPdpDeactivateAll(SgsnInfo *si, SmCause::Cause cause)
-{
-	// TODO: what should transactionId be?
-	// This is a downlink command, and we are supposed to allocate a new transaction id for each one,
-	// but since this is the only one we ever send, maybe 0 is ok.
-	int transactionId = 0;
-	L3SmMsgDeactivatePdpContextRequest deact(transactionId,(SmCause::Cause)cause,true);
-	//si->getLlcEntity(LlcSapi::GPRSMM)->lleWriteHighSide(deact);
-	si->sgsnWriteHighSideMsg(deact);
-}
+//void sendPdpDeactivateAll(SgsnInfo *si, SmCause::Cause cause)
+//{
+//	// TODO: what should transactionId be?
+//	// This is a downlink command, and we are supposed to allocate a new transaction id for each one,
+//	// but since this is the only one we ever send, maybe 0 is ok.
+//	int transactionId = 0;
+//	L3SmMsgDeactivatePdpContextRequest deact(transactionId,(SmCause::Cause)cause,true);
+//	//si->getLlcEntity(LlcSapi::GPRSMM)->lleWriteHighSide(deact);
+//	si->sgsnWriteHighSideMsg(deact);
+//}
 
 //void sendSmStatus(SgsnInfo *si,SmCause::Cause cause)
 //{

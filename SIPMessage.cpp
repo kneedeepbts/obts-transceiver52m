@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
+//#include <signal.h>
 
 #include <ortp/ortp.h>
 
@@ -265,10 +265,10 @@ void SipMessage::smAddViaBranch3(string transport, string proxy, string branch)
 	commaListPushFront(&msmVias,newvia);
 }
 
-void SipMessage::smAddViaBranch(string transport, string branch)
-{
-	smAddViaBranch3(transport,localIPAndPort(),branch);
-}
+//void SipMessage::smAddViaBranch(string transport, string branch)
+//{
+//	smAddViaBranch3(transport,localIPAndPort(),branch);
+//}
 
 void SipMessage::smAddViaBranch(SipBase *dialog, string branch)
 {
@@ -276,10 +276,10 @@ void SipMessage::smAddViaBranch(SipBase *dialog, string branch)
 	string newvia = format("SIP/2.0/%s %s;branch=%s\r\n",dialog->transportName(),dialog->localIPAndPort(),branch);
 	commaListPushFront(&msmVias,newvia);
 }
-string SipMessage::smPopVia()		// Pop and return the top via; modifies msmVias.
-{
-	return commaListPopFront(&msmVias);
-}
+//string SipMessage::smPopVia()		// Pop and return the top via; modifies msmVias.
+//{
+//	return commaListPopFront(&msmVias);
+//}
 
 string SipMessage::smGetProxy() const
 {
@@ -289,10 +289,10 @@ string SipMessage::smGetProxy() const
 	return via.mSentBy;
 }
 
-void SipMessage::addCallTerminationReasonSM(CallTerminationCause::termGroup group, int cause, string desc) {
-	LOG(INFO) << "SIP term info addCallTerminationReasonSM cause: " << cause;
-	SIPMsgCallTerminationList.add(group, cause, desc);
-}
+//void SipMessage::addCallTerminationReasonSM(CallTerminationCause::termGroup group, int cause, string desc) {
+//	LOG(INFO) << "SIP term info addCallTerminationReasonSM cause: " << cause;
+//	SIPMsgCallTerminationList.add(group, cause, desc);
+//}
 
 
 string SipMessage::smGetBranch()
@@ -300,15 +300,15 @@ string SipMessage::smGetBranch()
 	return SipVia(msmVias).mViaBranch;
 }
 
-string SipMessage::smGetReturnIPAndPort()
-{
-	string contactUri;
-	if (! crackUri(msmContactValue, NULL,&contactUri,NULL)) {
-		LOG(ERR);
-	}
-	string contact = SipUri(contactUri).uriHostAndPort();
-	return contact;
-}
+//string SipMessage::smGetReturnIPAndPort()
+//{
+//	string contactUri;
+//	if (! crackUri(msmContactValue, NULL,&contactUri,NULL)) {
+//		LOG(ERR);
+//	}
+//	string contact = SipUri(contactUri).uriHostAndPort();
+//	return contact;
+//}
 
 
 string SipMessage::text(bool verbose) const
@@ -636,20 +636,20 @@ bool sameMsg(SipMessage *msg1, SipMessage *msg2)
 }
 
 // Return false if the Max-Forwards is 1 or less or non-integral.
-bool SipMessage::smDecrementMaxFowards()
-{
-	if (msmMaxForwards.size()) {
-		assert(msmMaxForwards[0] != ' ');
-		int val = atoi(msmMaxForwards.c_str());	// If it is not numeric, it will return 0 silently.
-		val--;
-		if (val <= 0) { val = 0; }
-		msmMaxForwards = format("%d",val);
-		return val > 0;
-	} else {
-		msmMaxForwards = string("70");
-		return true;
-	}
-}
+//bool SipMessage::smDecrementMaxFowards()
+//{
+//	if (msmMaxForwards.size()) {
+//		assert(msmMaxForwards[0] != ' ');
+//		int val = atoi(msmMaxForwards.c_str());	// If it is not numeric, it will return 0 silently.
+//		val--;
+//		if (val <= 0) { val = 0; }
+//		msmMaxForwards = format("%d",val);
+//		return val > 0;
+//	} else {
+//		msmMaxForwards = string("70");
+//		return true;
+//	}
+//}
 
 
 };	// namespace SIP

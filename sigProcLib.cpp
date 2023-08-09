@@ -198,24 +198,24 @@ float vectorNorm2(const signalVector &x)
 }
 
 
-float vectorPower(const signalVector &x) 
-{
-  return vectorNorm2(x)/x.size();
-}
+//float vectorPower(const signalVector &x)
+//{
+//  return vectorNorm2(x)/x.size();
+//}
 
 /** compute cosine via lookup table */
-float cosLookup(const float x)
-{
-  float arg = x*M_1_2PI_F;
-  while (arg > 1.0F) arg -= 1.0F;
-  while (arg < 0.0F) arg += 1.0F;
-
-  const float argT = arg*((float)TABLESIZE);
-  const int argI = (int)argT;
-  const float delta = argT-argI;
-  const float iDelta = 1.0F-delta;
-  return iDelta*cosTable[argI] + delta*cosTable[argI+1];
-}
+//float cosLookup(const float x)
+//{
+//  float arg = x*M_1_2PI_F;
+//  while (arg > 1.0F) arg -= 1.0F;
+//  while (arg < 0.0F) arg += 1.0F;
+//
+//  const float argT = arg*((float)TABLESIZE);
+//  const int argI = (int)argT;
+//  const float delta = argT-argI;
+//  const float iDelta = 1.0F-delta;
+//  return iDelta*cosTable[argI] + delta*cosTable[argI+1];
+//}
 
 /** compute sine via lookup table */
 float sinLookup(const float x) 
@@ -542,69 +542,69 @@ static PulseSequence *generateGSMPulse(int sps, int symbolLength)
   return pulse;
 }
 
-signalVector* frequencyShift(signalVector *y,
-			     signalVector *x,
-			     float freq,
-			     float startPhase,
-			     float *finalPhase)
-{
+//signalVector* frequencyShift(signalVector *y,
+//			     signalVector *x,
+//			     float freq,
+//			     float startPhase,
+//			     float *finalPhase)
+//{
+//
+//  if (!x) return NULL;
+//
+//  if (y==NULL) {
+//    y = new signalVector(x->size());
+//    y->isRealOnly(x->isRealOnly());
+//    if (y==NULL) return NULL;
+//  }
+//
+//  if (y->size() < x->size()) return NULL;
+//
+//  float phase = startPhase;
+//  signalVector::iterator yP = y->begin();
+//  signalVector::iterator xPEnd = x->end();
+//  signalVector::iterator xP = x->begin();
+//
+//  if (x->isRealOnly()) {
+//    while (xP < xPEnd) {
+//      (*yP++) = expjLookup(phase)*( (xP++)->real() );
+//      phase += freq;
+//    }
+//  }
+//  else {
+//    while (xP < xPEnd) {
+//      (*yP++) = (*xP++)*expjLookup(phase);
+//      phase += freq;
+//    }
+//  }
+//
+//
+//  if (finalPhase) *finalPhase = phase;
+//
+//  return y;
+//}
 
-  if (!x) return NULL;
- 
-  if (y==NULL) {
-    y = new signalVector(x->size());
-    y->isRealOnly(x->isRealOnly());
-    if (y==NULL) return NULL;
-  }
-
-  if (y->size() < x->size()) return NULL;
-
-  float phase = startPhase;
-  signalVector::iterator yP = y->begin();
-  signalVector::iterator xPEnd = x->end();
-  signalVector::iterator xP = x->begin();
-
-  if (x->isRealOnly()) {
-    while (xP < xPEnd) {
-      (*yP++) = expjLookup(phase)*( (xP++)->real() );
-      phase += freq;
-    }
-  }
-  else {
-    while (xP < xPEnd) {
-      (*yP++) = (*xP++)*expjLookup(phase);
-      phase += freq;
-    }
-  }
-
-
-  if (finalPhase) *finalPhase = phase;
-
-  return y;
-}
-
-signalVector* reverseConjugate(signalVector *b)
-{
-    signalVector *tmp = new signalVector(b->size());
-    tmp->isRealOnly(b->isRealOnly());
-    signalVector::iterator bP = b->begin();
-    signalVector::iterator bPEnd = b->end();
-    signalVector::iterator tmpP = tmp->end()-1;
-    if (!b->isRealOnly()) {
-      while (bP < bPEnd) {
-        *tmpP-- = bP->conj();
-        bP++;
-      }
-    }
-    else {
-      while (bP < bPEnd) {
-        *tmpP-- = bP->real();
-        bP++;
-      }
-    }
-
-    return tmp;
-}
+//signalVector* reverseConjugate(signalVector *b)
+//{
+//    signalVector *tmp = new signalVector(b->size());
+//    tmp->isRealOnly(b->isRealOnly());
+//    signalVector::iterator bP = b->begin();
+//    signalVector::iterator bPEnd = b->end();
+//    signalVector::iterator tmpP = tmp->end()-1;
+//    if (!b->isRealOnly()) {
+//      while (bP < bPEnd) {
+//        *tmpP-- = bP->conj();
+//        bP++;
+//      }
+//    }
+//    else {
+//      while (bP < bPEnd) {
+//        *tmpP-- = bP->real();
+//        bP++;
+//      }
+//    }
+//
+//    return tmp;
+//}
 
 /* soft output slicer */
 bool vectorSlicer(signalVector *x) 
@@ -841,26 +841,26 @@ bool delayVector(signalVector &wBurst, float delay)
   return true;
 }
 
-signalVector *gaussianNoise(int length, 
-			    float variance, 
-			    complex mean)
-{
-
-  signalVector *noise = new signalVector(length);
-  signalVector::iterator nPtr = noise->begin();
-  float stddev = sqrtf(variance);
-  while (nPtr < noise->end()) {
-    float u1 = (float) rand()/ (float) RAND_MAX;
-    while (u1==0.0)
-      u1 = (float) rand()/ (float) RAND_MAX;
-    float u2 = (float) rand()/ (float) RAND_MAX;
-    float arg = 2.0*M_PI*u2;
-    *nPtr = mean + stddev*complex(cos(arg),sin(arg))*sqrtf(-2.0*log(u1));
-    nPtr++;
-  }
-
-  return noise;
-}
+//signalVector *gaussianNoise(int length,
+//			    float variance,
+//			    complex mean)
+//{
+//
+//  signalVector *noise = new signalVector(length);
+//  signalVector::iterator nPtr = noise->begin();
+//  float stddev = sqrtf(variance);
+//  while (nPtr < noise->end()) {
+//    float u1 = (float) rand()/ (float) RAND_MAX;
+//    while (u1==0.0)
+//      u1 = (float) rand()/ (float) RAND_MAX;
+//    float u2 = (float) rand()/ (float) RAND_MAX;
+//    float arg = 2.0*M_PI*u2;
+//    *nPtr = mean + stddev*complex(cos(arg),sin(arg))*sqrtf(-2.0*log(u1));
+//    nPtr++;
+//  }
+//
+//  return noise;
+//}
 
 complex interpolatePoint(const signalVector &inSig,
 			 float ix)
@@ -1003,39 +1003,39 @@ bool addVector(signalVector &x,
 }
 
 // in-place multiplication!!
-bool multVector(signalVector &x,
-                 signalVector &y)
-{
-  signalVector::iterator xP = x.begin();
-  signalVector::iterator yP = y.begin();
-  signalVector::iterator xPEnd = x.end();
-  signalVector::iterator yPEnd = y.end();
-  while ((xP < xPEnd) && (yP < yPEnd)) {
-    *xP = (*xP) * (*yP);
-    xP++; yP++;
-  }
-  return true;
-}
+//bool multVector(signalVector &x,
+//                 signalVector &y)
+//{
+//  signalVector::iterator xP = x.begin();
+//  signalVector::iterator yP = y.begin();
+//  signalVector::iterator xPEnd = x.end();
+//  signalVector::iterator yPEnd = y.end();
+//  while ((xP < xPEnd) && (yP < yPEnd)) {
+//    *xP = (*xP) * (*yP);
+//    xP++; yP++;
+//  }
+//  return true;
+//}
 
 
-void offsetVector(signalVector &x,
-		  complex offset)
-{
-  signalVector::iterator xP = x.begin();
-  signalVector::iterator xPEnd = x.end();
-  if (!x.isRealOnly()) {
-    while (xP < xPEnd) {
-      *xP += offset;
-      xP++;
-    }
-  }
-  else {
-    while (xP < xPEnd) {
-      *xP = xP->real() + offset;
-      xP++;
-    }      
-  }
-}
+//void offsetVector(signalVector &x,
+//		  complex offset)
+//{
+//  signalVector::iterator xP = x.begin();
+//  signalVector::iterator xPEnd = x.end();
+//  if (!x.isRealOnly()) {
+//    while (xP < xPEnd) {
+//      *xP += offset;
+//      xP++;
+//    }
+//  }
+//  else {
+//    while (xP < xPEnd) {
+//      *xP = xP->real() + offset;
+//      xP++;
+//    }
+//  }
+//}
 
 bool generateMidamble(int sps, int tsc)
 {

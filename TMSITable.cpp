@@ -22,9 +22,9 @@
 #include <sqlite3.h>
 #include "sqlite3util.h"
 
-#include "GSML3MMMessages.h"
-#include "Reporting.h"
-#include "Globals.h"
+//#include "GSML3MMMessages.h"
+//#include "Reporting.h"
+//#include "Globals.h"
 #include "GSML3CommonElements.h"
 
 #include <string>
@@ -33,8 +33,8 @@
 
 #include <sys/stat.h>
 #include "TMSITable.h"
-#include "ControlTransfer.h"
-#include "L3MobilityManagement.h"
+//#include "ControlTransfer.h"
+//#include "L3MobilityManagement.h"
 
 using namespace std;
 
@@ -214,12 +214,12 @@ void TMSITable::tmsiTabClearAuthCache()
 }
 
 
-void TMSITable::tmsiTabClear()
-{
-	runQuery("DELETE FROM TMSI_TABLE WHERE 1");
-	//clearAuthFailures();
-	//authFailures.clear();
-}
+//void TMSITable::tmsiTabClear()
+//{
+//	runQuery("DELETE FROM TMSI_TABLE WHERE 1");
+//	//clearAuthFailures();
+//	//authFailures.clear();
+//}
 
 void TMSITable::tmsiTabInit()
 {
@@ -251,52 +251,52 @@ void TMSITable::tmsiTabInit()
 }
 
 
-int TMSITable::tmsiTabOpen(const char* wPath) 
-{
-	// FIXME -- We can't call the logger here because it has not been initialized yet.
-	// (pat) I think this has been fixed - the TMSITable initialization is now in main().
-	//printf("TMSITable::open(%s)\n",wPath); fflush(stdout);
-	LOG(INFO) << "TMSITable::open "<<wPath;
-	mTablePath = string(wPath);
-
-	int rc = sqlite3_open(wPath,&mTmsiDB);
-	if (rc) {
-		// (pat) Lets just create the directory if it does not exist.
-		char dirpath[strlen(wPath)+100];
-		strcpy(dirpath,wPath);
-		char *sp = strrchr(dirpath,'/');
-		if (sp) {
-			*sp = 0;
-			mkdir(dirpath,0777);
-			rc = sqlite3_open(wPath,&mTmsiDB);	// try try again.
-		}
-	}
-	if (rc) {
-		LOG(EMERG) << "Cannot open TMSITable database at " << wPath << ": " << sqlite3_errmsg(mTmsiDB);
-		sqlite3_close(mTmsiDB);
-		mTmsiDB = NULL;
-		exit(1);
-		//return 1;
-	}
-
-	tmsiTabCheckVersion();
-
-	if (!sqlite_command(mTmsiDB,TmsiTableDefinition::create)) {
-		LOG(EMERG) << "Cannot create TMSI table in file:" <<mTablePath <<" using:" <<TmsiTableDefinition::create ;
-		exit(1);
-        //return 1;
-	}
-	// Set high-concurrency WAL mode.
-	if (!sqlite_command(mTmsiDB,enableWAL)) {
-		LOG(EMERG) << "Cannot enable WAL mode on database at " << wPath << ", error message: " << sqlite3_errmsg(mTmsiDB);
-	}
-	LOG(INFO) << "Opened TMSI table version "<<TmsiTableDefinition::tmsiTableVersion<< ":"<<wPath;
-	// (mike) 2014-06: to free ourselves of the in-tree sqlite3 code, the system library must be used.
-	//        However, sqlite3_db_filename is not available in Ubuntu 12.04. Removing dependence for now.
-	LOG(DEBUG) << "TEST sqlite3_db_filename:"<< wPath;//sqlite3_db_filename(mTmsiDB,"main");
-	tmsiTabInit();
-    return 0;
-}
+//int TMSITable::tmsiTabOpen(const char* wPath)
+//{
+//	// FIXME -- We can't call the logger here because it has not been initialized yet.
+//	// (pat) I think this has been fixed - the TMSITable initialization is now in main().
+//	//printf("TMSITable::open(%s)\n",wPath); fflush(stdout);
+//	LOG(INFO) << "TMSITable::open "<<wPath;
+//	mTablePath = string(wPath);
+//
+//	int rc = sqlite3_open(wPath,&mTmsiDB);
+//	if (rc) {
+//		// (pat) Lets just create the directory if it does not exist.
+//		char dirpath[strlen(wPath)+100];
+//		strcpy(dirpath,wPath);
+//		char *sp = strrchr(dirpath,'/');
+//		if (sp) {
+//			*sp = 0;
+//			mkdir(dirpath,0777);
+//			rc = sqlite3_open(wPath,&mTmsiDB);	// try try again.
+//		}
+//	}
+//	if (rc) {
+//		LOG(EMERG) << "Cannot open TMSITable database at " << wPath << ": " << sqlite3_errmsg(mTmsiDB);
+//		sqlite3_close(mTmsiDB);
+//		mTmsiDB = NULL;
+//		exit(1);
+//		//return 1;
+//	}
+//
+//	tmsiTabCheckVersion();
+//
+//	if (!sqlite_command(mTmsiDB,TmsiTableDefinition::create)) {
+//		LOG(EMERG) << "Cannot create TMSI table in file:" <<mTablePath <<" using:" <<TmsiTableDefinition::create ;
+//		exit(1);
+//        //return 1;
+//	}
+//	// Set high-concurrency WAL mode.
+//	if (!sqlite_command(mTmsiDB,enableWAL)) {
+//		LOG(EMERG) << "Cannot enable WAL mode on database at " << wPath << ", error message: " << sqlite3_errmsg(mTmsiDB);
+//	}
+//	LOG(INFO) << "Opened TMSI table version "<<TmsiTableDefinition::tmsiTableVersion<< ":"<<wPath;
+//	// (mike) 2014-06: to free ourselves of the in-tree sqlite3 code, the system library must be used.
+//	//        However, sqlite3_db_filename is not available in Ubuntu 12.04. Removing dependence for now.
+//	LOG(DEBUG) << "TEST sqlite3_db_filename:"<< wPath;//sqlite3_db_filename(mTmsiDB,"main");
+//	tmsiTabInit();
+//    return 0;
+//}
 
 TMSITable::~TMSITable()
 {
@@ -311,13 +311,13 @@ bool TMSITable::dropTmsi(uint32_t tmsi)
 	return runQuery(query,1);
 }
 
-bool TMSITable::dropImsi(const char *imsi)
-{
-	char query[100];
-	LOG(DEBUG) << "Removing TMSITable entry for"<<LOGVAR(imsi);
-	snprintf(query,100,"DELETE FROM TMSI_TABLE WHERE IMSI == '%s'",imsi);
-	return runQuery(query,1);
-}
+//bool TMSITable::dropImsi(const char *imsi)
+//{
+//	char query[100];
+//	LOG(DEBUG) << "Removing TMSITable entry for"<<LOGVAR(imsi);
+//	snprintf(query,100,"DELETE FROM TMSI_TABLE WHERE IMSI == '%s'",imsi);
+//	return runQuery(query,1);
+//}
 
 
 #if UNUSED
@@ -683,13 +683,13 @@ void TMSITable::tmsiTabTouchImsi(string IMSI) const
 	runQuery(query);
 }
 
-void TMSITable::tmsiTabReallocationComplete(unsigned TMSI) const
-{
-	ScopedLock lock(sTmsiMutex,__FILE__,__LINE__); // This lock should be redundant - sql serializes access, but it may prevent sql retry failures.
-	char query[100];
-	snprintf(query,100,"UPDATE TMSI_TABLE SET TMSI_ASSIGNED = 1 WHERE TMSI == %d",tmsi2table(TMSI));
-	runQuery(query);
-}
+//void TMSITable::tmsiTabReallocationComplete(unsigned TMSI) const
+//{
+//	ScopedLock lock(sTmsiMutex,__FILE__,__LINE__); // This lock should be redundant - sql serializes access, but it may prevent sql retry failures.
+//	char query[100];
+//	snprintf(query,100,"UPDATE TMSI_TABLE SET TMSI_ASSIGNED = 1 WHERE TMSI == %d",tmsi2table(TMSI));
+//	runQuery(query);
+//}
 
 
 // Pop all the fields we use during mobility management authorization out of the TMSI table.
@@ -844,51 +844,51 @@ vector< vector<string> > TMSITable::tmsiTabView(int verbosity, bool rawFlag, uns
 }
 
 
-void TMSITable::tmsiTabDump(int verbosity,bool rawFlag, ostream& os, bool showAll, bool taboption) const
-{
-	// Dump the TMSI table.
-	unsigned maxrows = showAll ? 10000000 : 100;
-	vector< vector<string> > view = tmsiTabView(verbosity, rawFlag, maxrows);
-
-#if unused
-	// Add the IMSI authorization failures.  They dont have TMSIs, or any other information.
-	vector<string> failList;
-	getAuthFailures(failList);
-	for (vector<string>::iterator it = failList.begin(); it != failList.end(); it++) {
-		if (view.size() >= maxrows) break;
-		vector<string> failureRow;
-		failureRow.push_back(*it);		// The IMSI;
-		failureRow.push_back(string("-"));		// TMSI
-		failureRow.push_back(string("0"));		// AUTH
-		view.push_back(failureRow);
-	}
-#endif
-
-	if (view.size() >= maxrows) {
-		vector<string> tmp;
-		tmp.push_back(string("..."));
-		view.push_back(tmp);
-	}
-
-	printPrettyTable(view,os,taboption);
-
-#if 0	// previous tmsi table dumping code.
-	sqlite3_stmt *stmt;
-	if (sqlite3_prepare_statement(mTmsiDB,&stmt,"SELECT TMSI,IMSI,CREATED,ACCESSED FROM TMSI_TABLE ORDER BY ACCESSED DESC")) {
-		LOG(ERR) << "sqlite3_prepare_statement failed";
-		return;
-	}
-	time_t now = time(NULL);
-	while (sqlite3_run_query(mTmsiDB,stmt)==SQLITE_ROW) {
-		os << hex << setw(8) << sqlite3_column_int64(stmt,0) << ' ' << dec;
-		os << sqlite3_column_text(stmt,1) << ' ';
-		printAge(now-sqlite3_column_int(stmt,2),os); os << ' ';
-		printAge(now-sqlite3_column_int(stmt,3),os); os << ' ';
-		os << endl;
-	}
-	sqlite3_finalize(stmt);
-#endif
-}
+//void TMSITable::tmsiTabDump(int verbosity,bool rawFlag, ostream& os, bool showAll, bool taboption) const
+//{
+//	// Dump the TMSI table.
+//	unsigned maxrows = showAll ? 10000000 : 100;
+//	vector< vector<string> > view = tmsiTabView(verbosity, rawFlag, maxrows);
+//
+//#if unused
+//	// Add the IMSI authorization failures.  They dont have TMSIs, or any other information.
+//	vector<string> failList;
+//	getAuthFailures(failList);
+//	for (vector<string>::iterator it = failList.begin(); it != failList.end(); it++) {
+//		if (view.size() >= maxrows) break;
+//		vector<string> failureRow;
+//		failureRow.push_back(*it);		// The IMSI;
+//		failureRow.push_back(string("-"));		// TMSI
+//		failureRow.push_back(string("0"));		// AUTH
+//		view.push_back(failureRow);
+//	}
+//#endif
+//
+//	if (view.size() >= maxrows) {
+//		vector<string> tmp;
+//		tmp.push_back(string("..."));
+//		view.push_back(tmp);
+//	}
+//
+//	printPrettyTable(view,os,taboption);
+//
+//#if 0	// previous tmsi table dumping code.
+//	sqlite3_stmt *stmt;
+//	if (sqlite3_prepare_statement(mTmsiDB,&stmt,"SELECT TMSI,IMSI,CREATED,ACCESSED FROM TMSI_TABLE ORDER BY ACCESSED DESC")) {
+//		LOG(ERR) << "sqlite3_prepare_statement failed";
+//		return;
+//	}
+//	time_t now = time(NULL);
+//	while (sqlite3_run_query(mTmsiDB,stmt)==SQLITE_ROW) {
+//		os << hex << setw(8) << sqlite3_column_int64(stmt,0) << ' ' << dec;
+//		os << sqlite3_column_text(stmt,1) << ' ';
+//		printAge(now-sqlite3_column_int(stmt,2),os); os << ' ';
+//		printAge(now-sqlite3_column_int(stmt,3),os); os << ' ';
+//		os << endl;
+//	}
+//	sqlite3_finalize(stmt);
+//#endif
+//}
 
 
 

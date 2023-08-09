@@ -17,9 +17,9 @@
 
 #include "BitVector.h"
 #include "AmrCoder.h"
-#include <iostream>
-#include <stdio.h>
-#include <sstream>
+//#include <iostream>
+//#include <stdio.h>
+//#include <sstream>
 
 using namespace std;
 

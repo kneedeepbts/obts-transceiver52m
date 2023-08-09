@@ -55,78 +55,78 @@ GSMConfig::GSMConfig()
 {
 }
 
-void GSMConfig::gsmInit() 
-{
-	// (pat 3-2014) Because the changemark was always inited to 0, if you kill OpenBTS, change something that affects the beacon,
-	// and restart, the handsets do not know the beacon has changed.  We need the changemark to be persistent across restarts.
-	// As a sneaky dirty way to do this, I am putting it in the config database.
-	const char *GsmChangeMark = "GSM.ChangeMark";
-
-    // FIXME: Bypassing the dumb config system...
-    //        Not defined, so just skipping
-//	if (gConfig.defines(GsmChangeMark)) {
-//		mChangemark = gConfig.getNum(GsmChangeMark) % 8;
+//void GSMConfig::gsmInit()
+//{
+//	// (pat 3-2014) Because the changemark was always inited to 0, if you kill OpenBTS, change something that affects the beacon,
+//	// and restart, the handsets do not know the beacon has changed.  We need the changemark to be persistent across restarts.
+//	// As a sneaky dirty way to do this, I am putting it in the config database.
+//	const char *GsmChangeMark = "GSM.ChangeMark";
+//
+//    // FIXME: Bypassing the dumb config system...
+//    //        Not defined, so just skipping
+////	if (gConfig.defines(GsmChangeMark)) {
+////		mChangemark = gConfig.getNum(GsmChangeMark) % 8;
+////	}
+//
+//    // FIXME: Bypassing the dumb config system...
+//	long changed = 0;
+////	long band = gConfig.getNum("GSM.Radio.Band");
+////	long c0 = gConfig.getNum("GSM.Radio.C0");
+//    long band = 900;
+//    long c0 = 51;
+//
+//	// We do not init this statically because it must be done after config options are inited.
+//	gControlChannelDescription = new L3ControlChannelDescription();
+//	gControlChannelDescription->validate();
+//
+//	// adjust to an appropriate band if C0 is bogus
+//	if (c0 >= 128 && c0 <= 251 && band != 850) {
+//		changed = band;
+//		band = 850;
+//	} else if (c0 <= 124 && band != 900) {
+//		changed = band;
+//		band = 900;
+//	} else if (c0 >= 975 && c0 <= 1023 && band != 900) {
+//		changed = band;
+//		band = 900;
+//	} else if (c0 >= 512 && c0 <= 810 && band != 1800 && band != 1900) {
+//		changed = band;
+//		band = 1800;
+//	} else if (c0 >= 811 && c0 <= 885 && band != 1800) {
+//		changed = band;
+//		band = 1800;
 //	}
+//
+//	if (changed) {
+//        // FIXME: Bypassing the dumb config system...
+//		//if (gConfig.set("GSM.Radio.Band", band)) {
+//        if (false) {
+//			LOG(NOTICE) << "crisis averted: automatically adjusted GSM.Radio.Band from " << changed << " to " << band << " so GSM.Radio.C0 is in range";
+//		} else {
+//			LOG(ERR) << "unable to automatically adjust GSM.Radio.Band, config write error";
+//		}
+//	}
+//
+//    // FIXME: Bypassing the dumb config system...
+//	//mBand = (GSMBand)gConfig.getNum("GSM.Radio.Band");
+//    mBand = (GSMBand)900;
+// 	regenerateBeacon();
+//}
 
-    // FIXME: Bypassing the dumb config system...
-	long changed = 0;
-//	long band = gConfig.getNum("GSM.Radio.Band");
-//	long c0 = gConfig.getNum("GSM.Radio.C0");
-    long band = 900;
-    long c0 = 51;
-
-	// We do not init this statically because it must be done after config options are inited.
-	gControlChannelDescription = new L3ControlChannelDescription();
-	gControlChannelDescription->validate();
-
-	// adjust to an appropriate band if C0 is bogus
-	if (c0 >= 128 && c0 <= 251 && band != 850) {
-		changed = band;
-		band = 850;
-	} else if (c0 <= 124 && band != 900) {
-		changed = band;
-		band = 900;
-	} else if (c0 >= 975 && c0 <= 1023 && band != 900) {
-		changed = band;
-		band = 900;
-	} else if (c0 >= 512 && c0 <= 810 && band != 1800 && band != 1900) {
-		changed = band;
-		band = 1800;
-	} else if (c0 >= 811 && c0 <= 885 && band != 1800) {
-		changed = band;
-		band = 1800;
-	}
-
-	if (changed) {
-        // FIXME: Bypassing the dumb config system...
-		//if (gConfig.set("GSM.Radio.Band", band)) {
-        if (false) {
-			LOG(NOTICE) << "crisis averted: automatically adjusted GSM.Radio.Band from " << changed << " to " << band << " so GSM.Radio.C0 is in range";
-		} else {
-			LOG(ERR) << "unable to automatically adjust GSM.Radio.Band, config write error";
-		}
-	}
-
-    // FIXME: Bypassing the dumb config system...
-	//mBand = (GSMBand)gConfig.getNum("GSM.Radio.Band");
-    mBand = (GSMBand)900;
- 	regenerateBeacon();
-}
-
-void GSMConfig::gsmStart()
-{
-	// If requested, start gprs to allocate channels at startup.
-	// Otherwise, channels are allocated on demand, if possible.
-	if (GPRS::GPRSConfig::IsEnabled()) {
-		// Start gprs.
-		GPRS::gprsStart();
-	}
-	gPowerManager.pmStart();
-	// Do not call this until the paging channels are installed.
-	PagerStart();
-
-	Control::l3start();	// (pat) For the L3 rewrite: start the L3 state machine dispatcher.
-}
+//void GSMConfig::gsmStart()
+//{
+//	// If requested, start gprs to allocate channels at startup.
+//	// Otherwise, channels are allocated on demand, if possible.
+//	if (GPRS::GPRSConfig::IsEnabled()) {
+//		// Start gprs.
+//		GPRS::gprsStart();
+//	}
+//	gPowerManager.pmStart();
+//	// Do not call this until the paging channels are installed.
+//	PagerStart();
+//
+//	Control::l3start();	// (pat) For the L3 rewrite: start the L3 state machine dispatcher.
+//}
 
 
 
@@ -470,18 +470,18 @@ template <class ChanType> size_t chanAvailable(const vector<ChanType*>& chanList
 }
 
 
+//
+//size_t GSMConfig::SDCCHAvailable() const
+//{
+//	ScopedLock lock(mLock);
+//	return chanAvailable<SDCCHLogicalChannel>(mSDCCHPool);
+//}
 
-size_t GSMConfig::SDCCHAvailable() const
-{
-	ScopedLock lock(mLock);
-	return chanAvailable<SDCCHLogicalChannel>(mSDCCHPool);
-}
-
-size_t GSMConfig::TCHAvailable() const
-{
-	ScopedLock lock(mLock);
-	return chanAvailable<TCHFACCHLogicalChannel>(mTCHPool);
-}
+//size_t GSMConfig::TCHAvailable() const
+//{
+//	ScopedLock lock(mLock);
+//	return chanAvailable<TCHFACCHLogicalChannel>(mTCHPool);
+//}
 
 
 
@@ -521,10 +521,10 @@ unsigned countAvailable(const TCHList& chanList)
 }
 
 
-unsigned GSMConfig::SDCCHActive() const
-{
-	return countActive(mSDCCHPool);
-}
+//unsigned GSMConfig::SDCCHActive() const
+//{
+//	return countActive(mSDCCHPool);
+//}
 
 unsigned GSMConfig::TCHActive() const
 {
@@ -537,31 +537,31 @@ unsigned GSMConfig::TCHTotal() const
 }
 
 
-void GSMConfig::createCombination0(TransceiverManager& TRX, unsigned TN)
-{
-	// This channel is a dummy burst generator.
-	// This should not be applied to C0T0.
-	LOG_ASSERT(TN!=0);
-	LOG(NOTICE) << "Configuring dummy filling on C0T " << TN;
-	ARFCNManager *radio = TRX.ARFCN(0);
-	radio->setSlot(TN,0);	// (pat) 0 => Transciever.h enum ChannelCombination = FILL
-}
+//void GSMConfig::createCombination0(TransceiverManager& TRX, unsigned TN)
+//{
+//	// This channel is a dummy burst generator.
+//	// This should not be applied to C0T0.
+//	LOG_ASSERT(TN!=0);
+//	LOG(NOTICE) << "Configuring dummy filling on C0T " << TN;
+//	ARFCNManager *radio = TRX.ARFCN(0);
+//	radio->setSlot(TN,0);	// (pat) 0 => Transciever.h enum ChannelCombination = FILL
+//}
 
 
-void GSMConfig::createCombinationI(TransceiverManager& TRX, unsigned CN, unsigned TN)
-{
-	LOG_ASSERT((CN!=0)||(TN!=0));
-	LOG(NOTICE) << "Configuring combination I on C" << CN << "T" << TN;
-	ARFCNManager *radio = TRX.ARFCN(CN);
-	radio->setSlot(TN,1);	// (pat) 1 => Transciever.h enum ChannelCombination = I
-	TCHFACCHLogicalChannel* chan = new TCHFACCHLogicalChannel(CN,TN,gTCHF_T[TN]);
-	chan->downstream(radio);
-	Thread* thread = new Thread;
-	thread->start((void*(*)(void*))Control::DCCHDispatcher,dynamic_cast<L3LogicalChannel*>(chan));
-	chan->lcinit();
-	if (CN == 0 && !testStart) chan->lcstart();	// Everything on C0 must broadcast continually.
-	gBTS.addTCH(chan);
-}
+//void GSMConfig::createCombinationI(TransceiverManager& TRX, unsigned CN, unsigned TN)
+//{
+//	LOG_ASSERT((CN!=0)||(TN!=0));
+//	LOG(NOTICE) << "Configuring combination I on C" << CN << "T" << TN;
+//	ARFCNManager *radio = TRX.ARFCN(CN);
+//	radio->setSlot(TN,1);	// (pat) 1 => Transciever.h enum ChannelCombination = I
+//	TCHFACCHLogicalChannel* chan = new TCHFACCHLogicalChannel(CN,TN,gTCHF_T[TN]);
+//	chan->downstream(radio);
+//	Thread* thread = new Thread;
+//	thread->start((void*(*)(void*))Control::DCCHDispatcher,dynamic_cast<L3LogicalChannel*>(chan));
+//	chan->lcinit();
+//	if (CN == 0 && !testStart) chan->lcstart();	// Everything on C0 must broadcast continually.
+//	gBTS.addTCH(chan);
+//}
 
 class Beacon {};
 
@@ -665,11 +665,11 @@ void GSMConfig::createCombinationVII(TransceiverManager& TRX, unsigned CN, unsig
 }
 
 
-void GSMConfig::setBtsHold(bool val)
-{
-	ScopedLock lock(mLock);
-	mHold = val;
-}
+//void GSMConfig::setBtsHold(bool val)
+//{
+//	ScopedLock lock(mLock);
+//	mHold = val;
+//}
 
 bool GSMConfig::btsHold() const
 {

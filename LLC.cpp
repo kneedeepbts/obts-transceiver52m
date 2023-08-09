@@ -737,13 +737,13 @@ void LlcParity::appendFCS(ByteVector &bv)
 }
 
 // Check the FCS in the last 3 bytes of bytevector.
-bool LlcParity::checkFCS(ByteVector &bv)
-{
-	unsigned len = bv.size();
-	uint32_t fcs = (bv.getByte(len-1)<<16) | (bv.getByte(len-2)<<8) | bv.getByte(len-3);
-	uint32_t computedFCS = computeCrc(bv.begin(),len-3);
-	return fcs == computedFCS;
-}
+//bool LlcParity::checkFCS(ByteVector &bv)
+//{
+//	unsigned len = bv.size();
+//	uint32_t fcs = (bv.getByte(len-1)<<16) | (bv.getByte(len-2)<<8) | bv.getByte(len-3);
+//	uint32_t computedFCS = computeCrc(bv.begin(),len-3);
+//	return fcs == computedFCS;
+//}
 
 LlcParity gLlcParity;	// The one and only parity generator needed.
 

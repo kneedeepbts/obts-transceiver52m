@@ -21,7 +21,7 @@
 #include "Logger.h"
 #include <stdlib.h>
 #include "CodecSet.h"
-#include "GSML3CCElements.h"
+//#include "GSML3CCElements.h"
 #include "SIPParse.h"
 #include "SIPMessage.h"
 #include "SIPBase.h"
@@ -38,10 +38,11 @@ struct SipParseError : public std::exception {
 };
 
 
-string makeUriWithTag(string username, string ip, string tag)
-{
-	return format("<sip:%s@%s>;tag=%s",username,ip,tag);
-}
+//string makeUriWithTag(string username, string ip, string tag)
+//{
+//	return format("<sip:%s@%s>;tag=%s",username,ip,tag);
+//}
+
 string makeUri(string username, string ip, unsigned port)
 {
 	if (port) {
@@ -100,20 +101,20 @@ void commaListPushFront(string *cl, string val)
 	}
 }
 
-string commaListPopFront(string *cl)	// Modify cl and return the result.
-{
-	string result;
-	if (cl->empty()) { return result; }	// This is probably an error on the part of the caller.
-	size_t cn = cl->find_first_of(',');
-	if (cn == string::npos) {
-		result = *cl;
-		*cl = string("");
-	} else {
-		result = cl->substr(0,cn);
-		*cl = trimboth(cl->substr(cn+1)," ,");	// The trimboth is paranoid overkill.
-	}
-	return trimboth(result," ,");	// Make extra sure there is no errant garbage around the result.
-}
+//string commaListPopFront(string *cl)	// Modify cl and return the result.
+//{
+//	string result;
+//	if (cl->empty()) { return result; }	// This is probably an error on the part of the caller.
+//	size_t cn = cl->find_first_of(',');
+//	if (cn == string::npos) {
+//		result = *cl;
+//		*cl = string("");
+//	} else {
+//		result = cl->substr(0,cn);
+//		*cl = trimboth(cl->substr(cn+1)," ,");	// The trimboth is paranoid overkill.
+//	}
+//	return trimboth(result," ,");	// Make extra sure there is no errant garbage around the result.
+//}
 
 string commaListFront(string cl)
 {
@@ -164,13 +165,13 @@ char SipChar::charClassData[256];
 
 
 // This can not distinguish between a missing param and one with an empty value.
-SipParamList::iterator SipParamList::paramFindIt(const char *name)
-{
-	for (SipParamList::iterator it = this->begin(); it != this->end(); it++) {
-		if (strceql(it->mName.c_str(),name)) { return it; }
-	}
-	return this->end();
-}
+//SipParamList::iterator SipParamList::paramFindIt(const char *name)
+//{
+//	for (SipParamList::iterator it = this->begin(); it != this->end(); it++) {
+//		if (strceql(it->mName.c_str(),name)) { return it; }
+//	}
+//	return this->end();
+//}
 
 string SipParamList::paramFind(const char*name)
 {
@@ -332,16 +333,16 @@ struct SipParseLine {
 // The uri-parameters appear within the <uri> and are: transport,user,moethod,ttl,lr.
 // The headers appear after '&' with the <uri>
 // In To: and From: there are generic-parameters after the URI outside the <>, including tag.
-string parseURI(const char *buffer, SipParamList &uriparams, SipParamList &headers)
-{
-	try {
-		SipParseLine parser(buffer);
-		return parser.parseLineURI(uriparams,headers);
-	} catch (...) {
-		LOG(DEBUG) << "Caught SIP Parse error";
-		return "";
-	}
-}
+//string parseURI(const char *buffer, SipParamList &uriparams, SipParamList &headers)
+//{
+//	try {
+//		SipParseLine parser(buffer);
+//		return parser.parseLineURI(uriparams,headers);
+//	} catch (...) {
+//		LOG(DEBUG) << "Caught SIP Parse error";
+//		return "";
+//	}
+//}
 
 // Extract a SIP parameter from a string containing a list of parameters.  They look like ;param1=value;param2=value ...
 // The input string need not start exactly at the beginning of the list.

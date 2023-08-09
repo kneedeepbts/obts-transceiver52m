@@ -30,9 +30,9 @@
 */ 
 
 
-#include <stdint.h>
+//#include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include "Threads.h"
 #include "DummyLoad.h"
 
@@ -43,18 +43,18 @@ using namespace std;
 
 
 
-int DummyLoad::loadBurst(short *wDummyBurst, int len) {
-  dummyBurst = wDummyBurst;
-  dummyBurstSz = len;
-  return 0;
-}
+//int DummyLoad::loadBurst(short *wDummyBurst, int len) {
+//  dummyBurst = wDummyBurst;
+//  dummyBurstSz = len;
+//  return 0;
+//}
 
 
-DummyLoad::DummyLoad (double _desiredSampleRate) 
-{
-  LOG(INFO) << "creating USRP device...";
-  sampleRate = _desiredSampleRate;
-}
+//DummyLoad::DummyLoad (double _desiredSampleRate)
+//{
+//  LOG(INFO) << "creating USRP device...";
+//  sampleRate = _desiredSampleRate;
+//}
 
 void DummyLoad::updateTime(void) {
     gettimeofday(&currTime,NULL);

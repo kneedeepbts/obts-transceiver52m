@@ -182,17 +182,17 @@ int gGetLoggingLevel(const char* filename)
 
 
 // copies the alarm list and returns it. list supposed to be small.
-list<string> gGetLoggerAlarms()
-{
-    alarmsLock.lock();
-    list<string> ret;
-    // excuse the "complexity", but to use std::copy with a list you need
-    // an insert_iterator - copy technically overwrites, doesn't insert.
-    insert_iterator< list<string> > ii(ret, ret.begin());
-    copy(alarmsList.begin(), alarmsList.end(), ii);
-    alarmsLock.unlock();
-    return ret;
-}
+//list<string> gGetLoggerAlarms()
+//{
+//    alarmsLock.lock();
+//    list<string> ret;
+//    // excuse the "complexity", but to use std::copy with a list you need
+//    // an insert_iterator - copy technically overwrites, doesn't insert.
+//    insert_iterator< list<string> > ii(ret, ret.begin());
+//    copy(alarmsList.begin(), alarmsList.end(), ii);
+//    alarmsLock.unlock();
+//    return ret;
+//}
 
 /** Add an alarm to the alarm list. */
 void addAlarm(const string& s)
@@ -263,29 +263,29 @@ ostringstream& Log::get()
 
 
 // Allow applications to also pass in a filename.  Filename should come from the database
-void gLogInitWithFile(const char* name, const char* level, int facility, char * LogFilePath)
-{
-	// Set the level if one has been specified.
-	if (level) {
-		gConfig.set("Log.Level",level);
-	}
-
-	if (gLogToFile==0 && LogFilePath != 0 && *LogFilePath != 0 && strlen(LogFilePath) > 0) {
-		gLogToFile = fopen(LogFilePath,"w"); // New log file each time we start.
-		if (gLogToFile) {
-			string when = Timeval::isoTime(time(NULL),true);
-			fprintf(gLogToFile,"Starting at %s\n",when.c_str());
-			fflush(gLogToFile);
-			std::cerr << name <<" logging to file: " << LogFilePath << "\n";
-		}
-	}
-
-	// Open the log connection.
-	openlog(name,0,facility);
-
-	// We cant call this from the Mutex itself because the Logger uses Mutex.
-	gMutexLogLevel = gGetLoggingLevel("Mutex.cpp");
-}
+//void gLogInitWithFile(const char* name, const char* level, int facility, char * LogFilePath)
+//{
+//	// Set the level if one has been specified.
+//	if (level) {
+//		gConfig.set("Log.Level",level);
+//	}
+//
+//	if (gLogToFile==0 && LogFilePath != 0 && *LogFilePath != 0 && strlen(LogFilePath) > 0) {
+//		gLogToFile = fopen(LogFilePath,"w"); // New log file each time we start.
+//		if (gLogToFile) {
+//			string when = Timeval::isoTime(time(NULL),true);
+//			fprintf(gLogToFile,"Starting at %s\n",when.c_str());
+//			fflush(gLogToFile);
+//			std::cerr << name <<" logging to file: " << LogFilePath << "\n";
+//		}
+//	}
+//
+//	// Open the log connection.
+//	openlog(name,0,facility);
+//
+//	// We cant call this from the Mutex itself because the Logger uses Mutex.
+//	gMutexLogLevel = gGetLoggingLevel("Mutex.cpp");
+//}
 
 
 
@@ -331,13 +331,13 @@ void gLogEarly(int level, const char *fmt, ...)
 }
 
 // Return _NumberOfLogGroups if invalid.
-LogGroup::Group LogGroup::groupNameToIndex(const char *groupName) const
-{
-	for (unsigned g = (Group)0; g < _NumberOfLogGroups; g++) {
-		if (0 == strcasecmp(mGroupNames[g],groupName)) { return (Group) g; }	// happiness
-	}
-	return _NumberOfLogGroups;	// failed
-}
+//LogGroup::Group LogGroup::groupNameToIndex(const char *groupName) const
+//{
+//	for (unsigned g = (Group)0; g < _NumberOfLogGroups; g++) {
+//		if (0 == strcasecmp(mGroupNames[g],groupName)) { return (Group) g; }	// happiness
+//	}
+//	return _NumberOfLogGroups;	// failed
+//}
 
 LogGroup::LogGroup() { LogGroupInit(); }
 
@@ -383,30 +383,30 @@ static const char*getNonEmptyStrIfDefined(string param)
 }
 
 // Set all the Log.Group debug levels based on database settings
-void LogGroup::setAll()
-{
-	LOG(DEBUG);
-	string groupprefix = string("Log.Group.");
-	string watchprefix = string("Log.Watch.");
-	for (unsigned g = 0; g < _NumberOfLogGroups; g++) {
-		{
-		string param = groupprefix + mGroupNames[g];
-		int level = 0;
-		if (const char*levelName = getNonEmptyStrIfDefined(param)) {
-			level = lookupLevel2(param,levelName);
-		}
-		mDebugLevel[g] = level;
-		}
-
-		{
-		string watchparam = watchprefix + mGroupNames[g];
-		int watchlevel = 0;
-		if (const char*levelName = getNonEmptyStrIfDefined(watchparam)) {
-			watchlevel = lookupLevel2(watchparam,levelName);
-		}
-		mWatchLevel[g] = watchlevel;
-		}
-	}
-}
+//void LogGroup::setAll()
+//{
+//	LOG(DEBUG);
+//	string groupprefix = string("Log.Group.");
+//	string watchprefix = string("Log.Watch.");
+//	for (unsigned g = 0; g < _NumberOfLogGroups; g++) {
+//		{
+//		string param = groupprefix + mGroupNames[g];
+//		int level = 0;
+//		if (const char*levelName = getNonEmptyStrIfDefined(param)) {
+//			level = lookupLevel2(param,levelName);
+//		}
+//		mDebugLevel[g] = level;
+//		}
+//
+//		{
+//		string watchparam = watchprefix + mGroupNames[g];
+//		int watchlevel = 0;
+//		if (const char*levelName = getNonEmptyStrIfDefined(watchparam)) {
+//			watchlevel = lookupLevel2(watchparam,levelName);
+//		}
+//		mWatchLevel[g] = watchlevel;
+//		}
+//	}
+//}
 
 // vim: ts=4 sw=4

@@ -2664,10 +2664,10 @@ void SACCHL1Encoder::encInit()
 
 
 
-SACCHL1Encoder* SACCHL1Decoder::SACCHSibling() 
-{
-	return mSACCHParent->encoder();
-}
+//SACCHL1Encoder* SACCHL1Decoder::SACCHSibling()
+//{
+//	return mSACCHParent->encoder();
+//}
 
 SACCHL1Decoder* SACCHL1Encoder::SACCHSibling() 
 {
@@ -2774,65 +2774,65 @@ BitVector2 randomBitVector(int n)
 	return t;
 }
 
-void TestTCHL1FEC()
-{
-	const TDMAMapping hack((TypeAndOffset)0,0,0,0,0,0,0,0);
-	TCHFACCHL1Encoder encoder(0, 0, hack, 0);
-	TCHFACCHL1Decoder decoder(0, 0, hack, 0);
-	for (unsigned modei = 0; modei <= TCH_FS; modei++) {
-		int modeii = modei == 0 ? (int)TCH_FS : modei-1;		// test full rate GSM first.
-		AMRMode mode = (AMRMode)modeii;
-		unsigned inSize = gAMRKd[mode];
-		bool ok = true;
-		cout <<LOGVAR(mode) <<LOGVAR(inSize) <<" ";
-		encoder.setAmrMode(mode);
-		decoder.setAmrMode(mode);
-		assert(encoder.getTCHPayloadSize() == inSize);
-		for (unsigned trial = 0; trial < 10; trial++) {
-			bool ok1 = true;
-			BitVector2 r(inSize);
-			if (trial == 0) { r.zero(); }
-			else { r = randomBitVector(inSize); }
-			BitVector2 pay1, pay2;
-			AudioFrame *aFrame = new AudioFrameRtp(mode);
-			aFrame->append(r);
-			encoder.encodeTCH(aFrame);		// Leaves the result in mC
-			LOG(BLATHER) <<LOGVAR(encoder.mC);
-			SoftVector softC = encoder.mC;	// Convert mC to a SoftVector.
-			ok1 = decoder.decodeTCH(false,&softC);	// Decoder leaves result in the mSpeechQ.
-			if (!ok1) {
-				cout << LOGVAR(trial) <<" decode fail";
-				ok = false;
-			}
-			AudioFrame * aframe = decoder.recvTCH();		// Pulls it out of mSpeechQ.
-			LOG(BLATHER)<<LOGVAR(*aframe);
-
-			pay1 = r;
-			// Unmap the RTP frame:
-			AudioFrameRtp gsmFrame(mode,aframe);
-			pay2 = BitVector2(inSize);
-			gsmFrame.getPayload(&pay2);
-
-			if (pay1.size() != pay2.size()) {
-				cout <<LOGVAR(trial) <<" diff sizes" << endl;
-				ok = ok1 = false;
-			}
-
-			if (ok1) for (unsigned i = 0; i < pay1.size() && ok; i++) {
-				if (pay1.bit(i) == pay2.bit(i)) continue;
-				cout <<LOGVAR(trial) <<" values differ at " << i << endl;
-				ok = ok1 = false;
-				break;
-			}
-			//cout <<LOGVAR(pay1) << endl;
-			//cout <<LOGVAR(pay2) << endl;
-			if (!ok1) { ok = false; }	// redundant, but make sure
-			if (ok1) { cout <<LOGVAR(trial) << " OK"; }
-		}
-		cout << (ok ? " OK" : " FAIL") << endl;
-	}
-	exit(0);
-}
+//void TestTCHL1FEC()
+//{
+//	const TDMAMapping hack((TypeAndOffset)0,0,0,0,0,0,0,0);
+//	TCHFACCHL1Encoder encoder(0, 0, hack, 0);
+//	TCHFACCHL1Decoder decoder(0, 0, hack, 0);
+//	for (unsigned modei = 0; modei <= TCH_FS; modei++) {
+//		int modeii = modei == 0 ? (int)TCH_FS : modei-1;		// test full rate GSM first.
+//		AMRMode mode = (AMRMode)modeii;
+//		unsigned inSize = gAMRKd[mode];
+//		bool ok = true;
+//		cout <<LOGVAR(mode) <<LOGVAR(inSize) <<" ";
+//		encoder.setAmrMode(mode);
+//		decoder.setAmrMode(mode);
+//		assert(encoder.getTCHPayloadSize() == inSize);
+//		for (unsigned trial = 0; trial < 10; trial++) {
+//			bool ok1 = true;
+//			BitVector2 r(inSize);
+//			if (trial == 0) { r.zero(); }
+//			else { r = randomBitVector(inSize); }
+//			BitVector2 pay1, pay2;
+//			AudioFrame *aFrame = new AudioFrameRtp(mode);
+//			aFrame->append(r);
+//			encoder.encodeTCH(aFrame);		// Leaves the result in mC
+//			LOG(BLATHER) <<LOGVAR(encoder.mC);
+//			SoftVector softC = encoder.mC;	// Convert mC to a SoftVector.
+//			ok1 = decoder.decodeTCH(false,&softC);	// Decoder leaves result in the mSpeechQ.
+//			if (!ok1) {
+//				cout << LOGVAR(trial) <<" decode fail";
+//				ok = false;
+//			}
+//			AudioFrame * aframe = decoder.recvTCH();		// Pulls it out of mSpeechQ.
+//			LOG(BLATHER)<<LOGVAR(*aframe);
+//
+//			pay1 = r;
+//			// Unmap the RTP frame:
+//			AudioFrameRtp gsmFrame(mode,aframe);
+//			pay2 = BitVector2(inSize);
+//			gsmFrame.getPayload(&pay2);
+//
+//			if (pay1.size() != pay2.size()) {
+//				cout <<LOGVAR(trial) <<" diff sizes" << endl;
+//				ok = ok1 = false;
+//			}
+//
+//			if (ok1) for (unsigned i = 0; i < pay1.size() && ok; i++) {
+//				if (pay1.bit(i) == pay2.bit(i)) continue;
+//				cout <<LOGVAR(trial) <<" values differ at " << i << endl;
+//				ok = ok1 = false;
+//				break;
+//			}
+//			//cout <<LOGVAR(pay1) << endl;
+//			//cout <<LOGVAR(pay2) << endl;
+//			if (!ok1) { ok = false; }	// redundant, but make sure
+//			if (ok1) { cout <<LOGVAR(trial) << " OK"; }
+//		}
+//		cout << (ok ? " OK" : " FAIL") << endl;
+//	}
+//	exit(0);
+//}
 
 #endif // TESTTCHL1FEC
 

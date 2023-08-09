@@ -211,7 +211,7 @@ bool L2LogicalChannel::multiframeMode(SAPI_t sap) const {
 	}
 }
 
-LAPDState L2SAPMux::getLapdmState(SAPI_t sap) const { return mL2[SAP2SAPI(sap)] ? mL2[SAP2SAPI(sap)]->getLapdmState() : LAPDStateUnused; }
+//LAPDState L2SAPMux::getLapdmState(SAPI_t sap) const { return mL2[SAP2SAPI(sap)] ? mL2[SAP2SAPI(sap)]->getLapdmState() : LAPDStateUnused; }
 
 // For DCCH channels (FACCH, SACCH, SDCCH):
 // This function calls virtual L2DL::l2dlWriteHighSide(L3Frame) which maps
@@ -680,21 +680,21 @@ L3ChannelDescription L2LogicalChannelBase::channelDescription() const
 	);
 }
 
-ChannelHistory *L2LogicalChannel::getChannelHistory()
-{
-	return mSACCH ? mSACCH->getChannelHistory() : NULL;
-}
+//ChannelHistory *L2LogicalChannel::getChannelHistory()
+//{
+//	return mSACCH ? mSACCH->getChannelHistory() : NULL;
+//}
 
-string L2LogicalChannel::displayTimers() const
-{
-	ostringstream ss;
-	ss <<LOGVARM(mT3101) <<LOGVARM(mT3109) <<LOGVARM(mT3111);
-	if (mSACCH) {
-		// The only thing we want to display from L1 is the bad-frame-tracker variable, which is only useful in SACCH.
-		ss <<mSACCH->mL1->displayTimers();
-	}
-	return ss.str();
-}
+//string L2LogicalChannel::displayTimers() const
+//{
+//	ostringstream ss;
+//	ss <<LOGVARM(mT3101) <<LOGVARM(mT3109) <<LOGVARM(mT3111);
+//	if (mSACCH) {
+//		// The only thing we want to display from L1 is the bad-frame-tracker variable, which is only useful in SACCH.
+//		ss <<mSACCH->mL1->displayTimers();
+//	}
+//	return ss.str();
+//}
 
 
 SDCCHLogicalChannel::SDCCHLogicalChannel(
