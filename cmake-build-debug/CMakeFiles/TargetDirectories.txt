@@ -1,0 +1,3 @@
+/home/dwilliams/git/kneedeepbts/obts-transceiver52m/cmake-build-debug/CMakeFiles/obts_transceiver52m.dir
+/home/dwilliams/git/kneedeepbts/obts-transceiver52m/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/dwilliams/git/kneedeepbts/obts-transceiver52m/cmake-build-debug/CMakeFiles/rebuild_cache.dir
