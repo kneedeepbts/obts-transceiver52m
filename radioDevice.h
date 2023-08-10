@@ -1,5 +1,5 @@
-#ifndef __RADIO_DEVICE_H__
-#define __RADIO_DEVICE_H__
+#ifndef OBTS_TRANSCEIVER52M_RADIODEVICE_H
+#define OBTS_TRANSCEIVER52M_RADIODEVICE_H
 
 #include <cstdint>
 #include <string>
@@ -32,9 +32,9 @@ public:
         REF_GPS
     };
 
-    static RadioDevice *make(int sps, bool skipRx = false);
+    static RadioDevice * make(int sps, bool skipRx = false);
 
-    virtual ~RadioDevice() {}
+    virtual ~RadioDevice() = default;
 
     /** Initialize the USRP */
     virtual int open(const std::string &args, ReferenceType ref) = 0;
@@ -124,9 +124,9 @@ public:
 
     virtual double getSampleRate() = 0;
 
+    // FIXME: Should these be uint64_t?  Double seems wrong for counting samples.
     virtual double numberRead() = 0;
-
     virtual double numberWritten() = 0;
 };
 
-#endif
+#endif //OBTS_TRANSCEIVER52M_RADIODEVICE_H

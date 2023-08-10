@@ -1,147 +1,107 @@
 /*
-* Copyright 2008, 2009 Free Software Foundation, Inc.
-*
-* This software is distributed under the terms of the GNU Public License.
-* See the COPYING file in the main directory for details.
-*
-* This use of this software may be subject to additional restrictions.
-* See the LEGAL file in the main directory for details.
+ * Compilation Flags
+ *    SWLOOPBACK - compile for software loopback testing
+ */
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+#include <string>
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
-
-
-/*
-	Compilation Flags
-
-	SWLOOPBACK	compile for software loopback testing
-*/ 
-
-
-//#include <stdint.h>
-#include <string.h>
-//#include <stdlib.h>
 #include "Threads.h"
 #include "DummyLoad.h"
 
-#include "Logger.h"
-
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+#include "spdlog/spdlog.h"
 
 using namespace std;
 
-
-
-//int DummyLoad::loadBurst(short *wDummyBurst, int len) {
-//  dummyBurst = wDummyBurst;
-//  dummyBurstSz = len;
-//  return 0;
-//}
-
-
-//DummyLoad::DummyLoad (double _desiredSampleRate)
-//{
-//  LOG(INFO) << "creating USRP device...";
-//  sampleRate = _desiredSampleRate;
-//}
-
-void DummyLoad::updateTime(void) {
-    gettimeofday(&currTime,NULL);
-    double timeElapsed = (currTime.tv_sec - startTime.tv_sec)*1.0e6 + 
-      (currTime.tv_usec - startTime.tv_usec);
-    currstamp = (TIMESTAMP) floor(timeElapsed/(1.0e6/sampleRate));
+DummyLoad::DummyLoad(double desired_sample_rate) {
+    SPDLOG_INFO("Creating Dummy USRP device");
+    m_sample_rate = desired_sample_rate;
 }
 
-bool DummyLoad::make(bool wSkipRx) 
-{
-
-  samplesRead = 0;
-  samplesWritten = 0;
-  return true;
+int DummyLoad::loadBurst(short * dummy_burst, int length) {
+    dummy_burst = dummy_burst;
+    m_dummy_burst_size = length;
+    return 0;
 }
 
-bool DummyLoad::start() 
-{
-  LOG(INFO) << "starting USRP...";
-  underrun = false;
-  gettimeofday(&startTime,NULL);
-  dummyBurstCursor = 0;
-  return true;
+void DummyLoad::updateTime() {
+    gettimeofday(&m_current_time, nullptr);
+    double timeElapsed = (m_current_time.tv_sec - m_start_time.tv_sec) * 1.0e6 + (m_current_time.tv_usec - m_start_time.tv_usec);
+    m_current_timestamp = (TIMESTAMP) floor(timeElapsed / (1.0e6 / m_sample_rate));
 }
 
-bool DummyLoad::stop() 
-{
-  return true;
+bool DummyLoad::make(bool skip_rx) {
+    m_samples_read = 0;
+    m_samples_written = 0;
+    return true;
+}
+
+bool DummyLoad::start() {
+    SPDLOG_INFO("Starting Dummy USRP");
+    m_underrun = false;
+    gettimeofday(&m_start_time, nullptr);
+    m_dummy_burst_cursor = 0;
+    return true;
+}
+
+bool DummyLoad::stop() {
+    SPDLOG_INFO("Stopping Dummy USRP");
+    return true;
 }
 
 
 // NOTE: Assumes sequential reads
-int DummyLoad::readSamples(short *buf, int len, bool *overrun, 
-			    TIMESTAMP timestamp,
-			    bool *wUnderrun,
-			    unsigned *RSSI) 
-{
-  updateTime();
-  underrunLock.lock();
-  *wUnderrun = underrun;
-  underrunLock.unlock();
-  if (currstamp+len < timestamp) {
-	usleep(100); 
-	return 0;
-  } 
-  else if (currstamp < timestamp) {
-	usleep(100);
-	return 0;
-  }
-  else if (timestamp+len < currstamp) {
-	memcpy(buf,dummyBurst+dummyBurstCursor*2,sizeof(short)*2*(dummyBurstSz-dummyBurstCursor));
-	int retVal = dummyBurstSz-dummyBurstCursor;
-	dummyBurstCursor = 0;
-	return retVal;
-  }
-  else if (timestamp + len > currstamp) {
-	int amount = timestamp + len - currstamp;
-	if (amount < dummyBurstSz-dummyBurstCursor) {
-	        memcpy(buf,dummyBurst+dummyBurstCursor*2,sizeof(short)*2*amount);
-        	dummyBurstCursor += amount;
-        	return amount;
-	}
-	else {
-        	memcpy(buf,dummyBurst+dummyBurstCursor*2,sizeof(short)*2*(dummyBurstSz-dummyBurstCursor));
-        	int retVal = dummyBurstSz-dummyBurstCursor;
-        	dummyBurstCursor = 0;
-        	return retVal;
+int DummyLoad::readSamples(short * buf, int len, bool * overrun, TIMESTAMP timestamp, bool * underrun, unsigned * rssi) {
+    updateTime();
+
+    m_underrun_lock.lock();
+    * underrun = m_underrun;
+    m_underrun_lock.unlock();
+
+    // FIXME: This section seems like it could use some cleanup.
+    if (m_current_timestamp + len < timestamp) {
+        usleep(100);
+        return 0;
+    } else if (m_current_timestamp < timestamp) {
+        usleep(100);
+        return 0;
+    } else if (timestamp + len < m_current_timestamp) {
+        memcpy(buf, m_dummy_burst + m_dummy_burst_cursor * 2, sizeof(short) * 2 * (m_dummy_burst_size - m_dummy_burst_cursor));
+        int retVal = m_dummy_burst_size - m_dummy_burst_cursor;
+        m_dummy_burst_cursor = 0;
+        return retVal;
+    } else if (timestamp + len > m_current_timestamp) {
+        int amount = timestamp + len - m_current_timestamp;
+        if (amount < m_dummy_burst_size - m_dummy_burst_cursor) {
+            memcpy(buf, m_dummy_burst + m_dummy_burst_cursor * 2, sizeof(short) * 2 * amount);
+            m_dummy_burst_cursor += amount;
+            return amount;
+        } else {
+            memcpy(buf, m_dummy_burst + m_dummy_burst_cursor * 2, sizeof(short) * 2 * (m_dummy_burst_size - m_dummy_burst_cursor));
+            int retVal = m_dummy_burst_size - m_dummy_burst_cursor;
+            m_dummy_burst_cursor = 0;
+            return retVal;
         }
-  }
-  return 0;
+    }
+    return 0;
 }
 
-int DummyLoad::writeSamples(short *buf, int len, bool *wUnderrun, 
-			     unsigned long long timestamp,
-			     bool isControl) 
-{
-  updateTime();
-  underrunLock.lock();
-  underrun |= (currstamp+len < timestamp); 
-  underrunLock.unlock();
-  return len;
+int DummyLoad::writeSamples(short * buf, int len, bool * underrun, TIMESTAMP timestamp, bool is_control) {
+    updateTime();
+    m_underrun_lock.lock();
+    m_underrun |= (m_current_timestamp + len < timestamp);
+    m_underrun_lock.unlock();
+    return len;
 }
 
-bool DummyLoad::updateAlignment(TIMESTAMP timestamp) 
-{
-  return true;
+bool DummyLoad::updateAlignment(TIMESTAMP timestamp) {
+    return true;
 }
 
-bool DummyLoad::setTxFreq(double wFreq) { return true;};
-bool DummyLoad::setRxFreq(double wFreq) { return true;};
+bool DummyLoad::setTxFreq(double wFreq) {
+    return true;
+}
+
+bool DummyLoad::setRxFreq(double wFreq) {
+    return true;
+}

@@ -104,6 +104,8 @@ add_executable(obts_transceiver52m
         DCCHDispatch.cpp
         LinkedLists.cpp
         CBS.cpp
+        smplbuf.cpp
+        smplbuf.h
 )
 
 target_link_libraries(obts_transceiver52m pthread sqlite3 rt ortp uhd)
