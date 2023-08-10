@@ -1,61 +1,39 @@
-/*
-* Copyright 2008, 2009, 2010 Free Software Foundation, Inc.
-* Copyright 2010 Kestrel Signal Processing, Inc.
-*
-* This software is distributed under the terms of the GNU Affero Public License.
-* See the COPYING file in the main directory for details.
-*
-* This use of this software may be subject to additional restrictions.
-* See the LEGAL file in the main directory for details.
+#include <csignal>
+#include <cstdint>
+#include <ctime>
+#include <random>
 
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Affero General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU Affero General Public License for more details.
-
-	You should have received a copy of the GNU Affero General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
+//#include "cpptoml.h"
 
 
 
-#include "Transceiver.h"
-#include "radioDevice.h"
-#include "DummyLoad.h"
-
-#include <time.h>
-#include <signal.h>
-
+// FIXME: Work through these and figure out which are actually needed.
 #include "GSMCommon.h"
-#include "Logger.h"
-#include "Configuration.h"
 #include "Reporting.h"
 #include "PhysicalStatus.h"
 #include "GSMConfig.h"
 #include "Peering.h"
 #include "NeighborTable.h"
 
-#define CONFIGDB            "/etc/OpenBTS/OpenBTS.db"
+#include "Transceiver.h"
+#include "radioDevice.h"
+#include "DummyLoad.h"
 
-/* Samples-per-symbol for downlink path
- *     4 - Uses precision modulator (more computation, less distortion)
- *     1 - Uses minimized modulator (less computation, more distortion)
- *
- *     Other values are invalid. Receive path (uplink) is always
- *     downsampled to 1 sps
- */
-#define SPS                 4
 
-std::vector<std::string> configurationCrossCheck(const std::string& key);
-static const char *cOpenBTSConfigEnv = "OpenBTSConfigFile";
+
+
+//#define CONFIGDB            "/etc/OpenBTS/OpenBTS.db"
+
+
+
+//std::vector<std::string> configurationCrossCheck(const std::string& key);
+//static const char *cOpenBTSConfigEnv = "OpenBTSConfigFile";
 // Load configuration from a file.
-ConfigurationTable gConfig(getenv(cOpenBTSConfigEnv)?getenv(cOpenBTSConfigEnv):CONFIGDB,"transceiver", getConfigurationKeys());
+//ConfigurationTable gConfig(getenv(cOpenBTSConfigEnv)?getenv(cOpenBTSConfigEnv):CONFIGDB,"transceiver", getConfigurationKeys());
 
 // FIXME: Adding this here to make a bunch of dumb externs happy.
 //ReportingTable gReports(gConfig.getStr("Control.Reporting.StatsTable").c_str());
@@ -72,213 +50,181 @@ GSMConfig gBTS;
 // the Logger may not have been initialized yet.
 
 // Our interface to the software-defined radio.
-TransceiverManager gTRX(gConfig.getNum("GSM.Radio.ARFCNs"), gConfig.getStr("TRX.IP").c_str(), gConfig.getNum("TRX.Port"));
+// FIXME: Bypassing the dumb config system...
+//TransceiverManager gTRX(gConfig.getNum("GSM.Radio.ARFCNs"), gConfig.getStr("TRX.IP").c_str(), gConfig.getNum("TRX.Port"));
+TransceiverManager gTRX(1, "127.0.0.1", 5700);
 /** The global peering interface. */
 Peering::PeerInterface gPeerInterface;
 /** The global neighbor table. */
 Peering::NeighborTable gNeighborTable;
 
-
+// FIXME: This "shutdown" method can stand to be cleaned up, but that's a small problem for later.
 volatile bool gbShutdown = false;
 
-static void ctrlCHandler(int signo)
-{
-  std::cout << "Received shutdown signal" << std::endl;
-  gbShutdown = true;
+static void ctrlCHandler(int signo) {
+    SPDLOG_INFO("Received shutdown signal: {}", signo);
+    gbShutdown = true;
 }
 
-/*
- * Attempt to open and test the database file before
- * accessing the configuration table. We do this because
- * the global table constructor cannot provide notification
- * in the event of failure.
- */
-int testConfig(const char *filename)
-{
-  int rc, val = 9999;
-  sqlite3 *db;
-  std::string test = "sadf732zdvj2";
+int main(int argc, char *argv[]) {
+    /*** Parse CLI Arguments ***/
+    // TODO: Properly parse and handle any arguments
 
-  const char *keys[3] = {
-    "Log.Level",
-    "TRX.Port",
-    "TRX.IP",
-  };
+    /*** Parse Config File ***/
+    // FIXME: Get the config file path from a command line arg.
+    // FIXME: Update this application to use a config file.
+//    shared_ptr<cpptoml::table> config = cpptoml::parse_file("/etc/openbts/smqueue.conf");
+//    shared_ptr<cpptoml::table> config_smqueue = config->get_table("smqueue");
+//    shared_ptr<cpptoml::table> config_logging = config->get_table("logging");
+//    std::string log_level = *config_logging->get_as<std::string>("level");
+//    std::string log_type = *config_logging->get_as<std::string>("type");
+//    std::string log_filename = *config_logging->get_as<std::string>("filename");
+    std::string log_level = "debug";
+    std::string log_type = "console";
+    std::string log_filename = "/var/log/smqueue.log";
 
-  /* Try to open the database  */
-  rc = sqlite3_open(filename, &db);
-  if (rc || !db) {
-    std::cerr << "Config: Database could not be opened" << std::endl;
-    return -1;
-  } else {
-    sqlite3_close(db);
-  }
-
-  /* Attempt to set a value in the global config */
-  if (!gConfig.set(test, val)) {
-    std::cerr << "Config: Failed to set test key - "
-              << "permission to access the database?" << std::endl;
-    return -1;
-  } else {
-    gConfig.remove(test);
-  }
-
-  /* Attempt to query */
-  for (int i = 0; i < 3; i++) {
-    try {
-      gConfig.getStr(keys[i]); 
-    } catch (...) {
-      std::cerr << "Config: Failed query on " << keys[i] << std::endl;
-      return -1;
+    // FIXME: Figure out what this is supposed to be getting and move to config file.
+    //        The `deviceArgs` string is sent to the radio class.
+    std::string deviceArgs;
+    if (argc == 3) {
+        deviceArgs = std::string(argv[2]);
+    } else {
+        deviceArgs = "";
     }
-  }
 
-  return 0; 
-}
+    std::uint16_t trxPort = 5700;
+    std::string trxAddr = "127.0.0.1";
 
-int main(int argc, char *argv[])
-{
-  int trxPort, radioType, fail = 0;
-  std::string deviceArgs, logLevel, trxAddr, refstr;
-  RadioDevice *usrp = NULL;
-  RadioDevice::ReferenceType refType;
-  RadioInterface *radio = NULL;
-  Transceiver *trx = NULL;
+    std::string clock_reference_str = "internal";
 
-  if (argc == 3)
-    deviceArgs = std::string(argv[2]);
-  else
-    deviceArgs = "";
+    /*** Setup Logger ***/
+    // create color console logger if enabled
+    if (log_type == "console") {
+        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        console_sink->set_level(spdlog::level::from_str(log_level));
+        //console_sink->set_pattern("[multi_sink_example] [%^%l%$] %v");
+        auto console_logger = std::make_shared<spdlog::logger>("console_logger", console_sink);
+        console_logger->set_level(spdlog::level::from_str(log_level));
+        spdlog::register_logger(console_logger);
+        spdlog::set_default_logger(console_logger);
+    }
+        // create file logger if enabled
+    else if (log_type == "file") {
+        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename);
+        file_sink->set_level(spdlog::level::from_str(log_level));
+        //file_sink->set_pattern("[multi_sink_example] [%^%l%$] %v");
+        auto file_logger = std::make_shared<spdlog::logger>("file_logger", file_sink);
+        file_logger->set_level(spdlog::level::from_str(log_level));
+        spdlog::register_logger(file_logger);
+        spdlog::set_default_logger(file_logger);
+    }
+    SPDLOG_WARN("Log level value from the config: {}", log_level);
+    SPDLOG_DEBUG("DEBUG mode is enabled");
 
-  if (signal(SIGINT, ctrlCHandler) == SIG_ERR) {
-    std::cerr << "Couldn't install signal handler for SIGINT" << std::endl;
-    return EXIT_FAILURE;
-  }
+    /*** Setup Signal Handlers ***/
+    if (signal(SIGINT, ctrlCHandler) == SIG_ERR) {
+        SPDLOG_ERROR("Couldn't install signal handler for SIGINT");
+        return EXIT_FAILURE;
+    }
 
-  if (signal(SIGTERM, ctrlCHandler) == SIG_ERR)  {
-    std::cerr << "Couldn't install signal handler for SIGTERM" << std::endl;
-    return EXIT_FAILURE;
-  }
+    if (signal(SIGTERM, ctrlCHandler) == SIG_ERR) {
+        SPDLOG_ERROR("Couldn't install signal handler for SIGTERM");
+        return EXIT_FAILURE;
+    }
 
-  // Configure logger.
-  if (testConfig(getenv(cOpenBTSConfigEnv)?getenv(cOpenBTSConfigEnv):CONFIGDB) < 0) {
-    std::cerr << "Config: Database failure" << std::endl;
-    return EXIT_FAILURE;
-  }
+    /*** Seed the random number source ***/
+    // FIXME: Moving to a better pseudo random number generator (pRNG).
+    //        Should probably seed from the kernel/hardware RNG, not time.
+    srandom(std::time(nullptr));
 
-  logLevel = gConfig.getStr("Log.Level");
-  trxPort = gConfig.getNum("TRX.Port");
-  trxAddr = gConfig.getStr("TRX.IP");
+    // https://en.cppreference.com/w/cpp/numeric/random/mersenne_twister_engine
+    std::mt19937 mrandom;
+    mrandom.seed(std::time(nullptr));
 
-  if (gConfig.defines("TRX.Reference"))
-    refstr = gConfig.getStr("TRX.Reference");
+    /*** Configure the Clock Source ***/
+    RadioDevice::ReferenceType clock_reference;
+    if (clock_reference_str == "gpsdo") {
+        clock_reference = RadioDevice::REF_GPS;
+        SPDLOG_INFO("Clock Reference: GPS");
+    } else if (clock_reference_str == "external") {
+        clock_reference = RadioDevice::REF_EXTERNAL;
+        SPDLOG_INFO("Clock Reference: External");
+    } else {
+        clock_reference = RadioDevice::REF_INTERNAL;
+        SPDLOG_INFO("Clock Reference: Internal");
+    }
 
-  /*
-   * We could get complicated here on search strings, but just use common
-   * cases for ease of use.
-   */
-  if ((refstr.find("GPS") != std::string::npos) ||
-      (refstr.find("gps") != std::string::npos)) {
-    refType = RadioDevice::REF_GPS;
-    refstr = "gpsdo";
-  } else if ((refstr.find("External") != std::string::npos) ||
-             (refstr.find("EXTERNAL") != std::string::npos) ||
-             (refstr.find("external") != std::string::npos)) {
-    refType = RadioDevice::REF_EXTERNAL;
-    refstr = "external";
-  } else {
-    refType = RadioDevice::REF_INTERNAL;
-    refstr = "internal";
-  }
+    /*** Setup the USRP SDR ***/
+    /* Samples-per-symbol (SPS) for downlink path
+     *     4 - Uses precision modulator (more computation, less distortion)
+     *     1 - Uses minimized modulator (less computation, more distortion)
+     *
+     *     Other values are invalid. Receive path (uplink) is always
+     *     downsampled to 1 sps
+     */
+    RadioDevice *usrp = RadioDevice::make(4);
+    int radio_type = usrp->open(deviceArgs, clock_reference);
+    if (radio_type < 0) {
+        SPDLOG_ERROR("Bad USRP radio type.");
+        return EXIT_FAILURE;
+    }
 
-  std::cout << "Using " << refstr << " frequency reference" << std::endl;
+    // FIXME: Not a fan of "failure booleans" to handle cleanups.  Will likely
+    //        move this logic to a radio handler class.
+    bool failure = false;
 
-  gLogInit("transceiver", logLevel.c_str(), LOG_LOCAL7);
+    RadioInterface *radio = nullptr;
+    switch (radio_type) {
+        case RadioDevice::NORMAL:
+            radio = new RadioInterface(usrp, 3, 4, false);
+            break;
+        case RadioDevice::RESAMP_64M:
+        case RadioDevice::RESAMP_100M:
+            radio = new RadioInterfaceResamp(usrp, 3, 4, false);
+            break;
+        default:
+            SPDLOG_ERROR("Unsupported radio type configuration");
+            failure = true;
+            break;
+    }
 
-  srandom(time(NULL));
+    if (!failure && !radio->init(radio_type)) {
+        SPDLOG_ERROR("Failed to initialize radio interface");
+        failure = true;
+    }
 
-  usrp = RadioDevice::make(SPS);
-  radioType = usrp->open(deviceArgs, refType);
-  if (radioType < 0) {
-    LOG(ALERT) << "Transceiver exiting..." << std::endl;
-    return EXIT_FAILURE;
-  }
+    Transceiver *trx = nullptr;
+    if (!failure) {
+        trx = new Transceiver(trxPort, trxAddr.c_str(), 4, GSM::Time(3, 0), radio);
+        if (!trx->init()) {
+            SPDLOG_ERROR("Failed to initialize transceiver");
+            failure = true;
+        }
+    }
 
-  switch (radioType) {
-  case RadioDevice::NORMAL:
-    radio = new RadioInterface(usrp, 3, SPS, false);
-    break;
-  case RadioDevice::RESAMP_64M:
-  case RadioDevice::RESAMP_100M:
-    radio = new RadioInterfaceResamp(usrp, 3, SPS, false);
-    break;
-  default:
-    LOG(ALERT) << "Unsupported configuration";
-    fail = 1;
-    goto shutdown;
-  }
-  if (!radio->init(radioType)) {
-    LOG(ALERT) << "Failed to initialize radio interface";
-    fail = 1;
-    goto shutdown;
-  }
+    if (!failure) {
+        trx->receiveFIFO(radio->receiveFIFO());
+        trx->start();
+    }
 
-  trx = new Transceiver(trxPort, trxAddr.c_str(), SPS, GSM::Time(3,0), radio);
-  if (!trx->init()) {
-    LOG(ALERT) << "Failed to initialize transceiver";
-    fail = 1;
-    goto shutdown;
-  }
-  trx->receiveFIFO(radio->receiveFIFO());
-  trx->start();
+    /*** Wait while the radio does its thing ***/
+    while (!failure && !gbShutdown) {
+        // FIXME: Should this be serviced more quickly?  Maybe 0.1 seconds?
+        sleep(1);
+    }
 
-  while (!gbShutdown)
-    sleep(1);
+    /*** Shutdown the radio ***/
+    SPDLOG_INFO("Shutting down transceiver");
 
-shutdown:
-  std::cout << "Shutting down transceiver..." << std::endl;
+    // FIXME: Should be able to do this with scopes and smart pointers, maybe a
+    //        wrapper class that handles these radio parts.
+    delete trx;
+    delete radio;
+    delete usrp;
 
-  delete trx;
-  delete radio;
-  delete usrp;
+    if (failure) {
+        return EXIT_FAILURE;
+    }
 
-  if (fail)
-    return EXIT_FAILURE;
-
-  return 0;
-}
-
-ConfigurationKeyMap getConfigurationKeys()
-{
-	ConfigurationKeyMap map;
-	ConfigurationKey *tmp;
-
-	tmp = new ConfigurationKey("TRX.RadioFrequencyOffset","128",
-		"~170Hz steps",
-		ConfigurationKey::FACTORY,
-		ConfigurationKey::VALRANGE,
-		"96:160",// educated guess
-		true,
-		"Fine-tuning adjustment for the transceiver master clock.  "
-			"Roughly 170 Hz/step.  "
-			"Set at the factory.  "
-			"Do not adjust without proper calibration."
-	);
-	map[tmp->getName()] = *tmp;
-	delete tmp;
-
-	tmp = new ConfigurationKey("TRX.TxAttenOffset","0",
-		"dB of attenuation",
-		ConfigurationKey::FACTORY,
-		ConfigurationKey::VALRANGE,
-		"0:100",// educated guess
-		true,
-		"Hardware-specific gain adjustment for transmitter, matched to the power amplifier, expessed as an attenuationi in dB.  "
-			"Set at the factory.  "
-			"Do not adjust without proper calibration."
-	);
-	map[tmp->getName()] = *tmp;
-	delete tmp;
-
-	return map;
+    return 0;
 }

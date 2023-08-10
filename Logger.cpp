@@ -97,13 +97,17 @@ int levelStringToInt(const string& name)
 /** Given a string, return the corresponding level name. */
 static int lookupLevel2(const string& key, const string &keyVal)
 {
-	int level = levelStringToInt(keyVal);
+    // NOTE: Force Default for a while.
+	//int level = levelStringToInt(keyVal);
+    int level = -1;
 
 	if (level == -1) {
-		string defaultLevel = gConfig.mSchema["Log.Level"].getDefaultValue();
+        // NOTE: Bypassing the dumb config until this logger class gets replaced.
+		//string defaultLevel = gConfig.mSchema["Log.Level"].getDefaultValue();
+        string defaultLevel = "debug";
 		level = levelStringToInt(defaultLevel);
 		_LOG(CRIT) << "undefined logging level (" << key << " = \"" << keyVal << "\") defaulting to \"" << defaultLevel << ".\" Valid levels are: EMERG, ALERT, CRIT, ERR, WARNING, NOTICE, INFO or DEBUG";
-		gConfig.set(key, defaultLevel);
+		//gConfig.set(key, defaultLevel);
 	}
 
 	return level;
@@ -111,29 +115,31 @@ static int lookupLevel2(const string& key, const string &keyVal)
 
 static int lookupLevel(const string& key)
 {
-	string val = gConfig.getStr(key);
+    // NOTE: Bypassing the dumb config system...
+	//string val = gConfig.getStr(key);
+    std::string val = "";
 	return lookupLevel2(key,val);
 }
 
 
 int getLoggingLevel(const char* filename)
 {
-	// Default level?
-	if (!filename) return lookupLevel("Log.Level");
-
-	// This can afford to be inefficient since it is not called that often.
-	string keyName;
-	keyName.reserve(100);
-	keyName.append("Log.Level.");
-	keyName.append(filename);
-	if (gConfig.defines(keyName)) {
-		string keyVal = gConfig.getStr(keyName);
-		// (pat 4-2014) The CLI 'unconfig' command does not unset the value, it just gives an empty value,
-		// so check for that and treat it as an unset value, ie, do nothing.
-		if (keyVal.size()) {
-			return lookupLevel2(keyName,keyVal);
-		}
-	}
+//	// Default level?
+//	if (!filename) return lookupLevel("Log.Level");
+//
+//	// This can afford to be inefficient since it is not called that often.
+//	string keyName;
+//	keyName.reserve(100);
+//	keyName.append("Log.Level.");
+//	keyName.append(filename);
+//	if (gConfig.defines(keyName)) {
+//		string keyVal = gConfig.getStr(keyName);
+//		// (pat 4-2014) The CLI 'unconfig' command does not unset the value, it just gives an empty value,
+//		// so check for that and treat it as an unset value, ie, do nothing.
+//		if (keyVal.size()) {
+//			return lookupLevel2(keyName,keyVal);
+//		}
+//	}
 	return lookupLevel("Log.Level");
 }
 
@@ -199,7 +205,9 @@ void addAlarm(const string& s)
 {
     alarmsLock.lock();
     alarmsList.push_back(s);
-	unsigned maxAlarms = gConfig.getNum("Log.Alarms.Max");
+    // NOTE: Bypassing the dumb config system...
+	//unsigned maxAlarms = gConfig.getNum("Log.Alarms.Max");
+    unsigned maxAlarms = 0;
     while (alarmsList.size() > maxAlarms) alarmsList.pop_front();
     alarmsLock.unlock();
 }
@@ -293,13 +301,14 @@ void gLogInit(const char* name, const char* level, int facility)
 {
 	// Set the level if one has been specified.
 	if (level) {
-		gConfig.set("Log.Level",level);
+		//gConfig.set("Log.Level",level);
 	}
 	gPid = getpid();
 
 	// Pat added, tired of the syslog facility.
 	// Both the transceiver and OpenBTS use this same Logger class, but only RMSC/OpenBTS/OpenNodeB may use this log file:
-	string str = gConfig.getStr("Log.File");
+	//string str = gConfig.getStr("Log.File");
+    string str = "";
 	if (gLogToFile==0 && str.length() && (0==strncmp(gCmdName,"Open",4) || 0==strncmp(gCmdName,"RMSC",4) || 0==strncmp(gCmdName,"RangeFinderGW",13))) {
 		const char *fn = str.c_str();
 		if (fn && *fn && strlen(fn)>3) {	// strlen because a garbage char is getting in sometimes.
@@ -376,10 +385,11 @@ void LogGroup::LogGroupInit()
 
 static const char*getNonEmptyStrIfDefined(string param)
 {
-	if (! gConfig.defines(param)) { return NULL; }
-	string result = gConfig.getStr(param);
-	// (pat) The "unconfig" command does not remove the value, it just gives it an empty value, so check for that.
-	return result.size() ? result.c_str() : NULL;
+//	if (! gConfig.defines(param)) { return NULL; }
+//	string result = gConfig.getStr(param);
+//	// (pat) The "unconfig" command does not remove the value, it just gives it an empty value, so check for that.
+//	return result.size() ? result.c_str() : NULL;
+    return nullptr;
 }
 
 // Set all the Log.Group debug levels based on database settings

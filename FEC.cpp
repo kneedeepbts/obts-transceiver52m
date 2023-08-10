@@ -20,7 +20,7 @@
 #include "RLCEngine.h"
 #include "FEC.h"
 #include "GSMTAPDump.h"
-#include "Transceiver.h"	// For Transceiver::IGPRS
+#include "TransceiverRAD1.h"	// For Transceiver::IGPRS
 #define FEC_DEBUG 0
 
 namespace GPRS {
