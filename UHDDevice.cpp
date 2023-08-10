@@ -633,7 +633,7 @@ bool uhd_device::recv_async_msg() {
     return true;
 }
 
-// FIXME: ostringstream seems heavy for sn error code decoder.
+// FIXME: ostringstream seems heavy for an error code decoder.
 std::string uhd_device::str_code(uhd::rx_metadata_t metadata) {
     std::ostringstream ost("UHD: ");
 
@@ -666,7 +666,7 @@ std::string uhd_device::str_code(uhd::rx_metadata_t metadata) {
     return ost.str();
 }
 
-// FIXME: ostringstream seems heavy for sn error code decoder.
+// FIXME: ostringstream seems heavy for an error code decoder.
 std::string uhd_device::str_code(uhd::async_metadata_t metadata) {
     std::ostringstream ost("UHD: ");
 

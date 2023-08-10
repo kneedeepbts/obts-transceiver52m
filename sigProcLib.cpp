@@ -1,52 +1,29 @@
-/*
-* Copyright 2008, 2011 Free Software Foundation, Inc.
-*
-* This software is distributed under the terms of the GNU Affero Public License.
-* See the COPYING file in the main directory for details.
-*
-* This use of this software may be subject to additional restrictions.
-* See the LEGAL file in the main directory for details.
-
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Affero General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU Affero General Public License for more details.
-
-	You should have received a copy of the GNU Affero General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
-
 #include "sigProcLib.h"
+
 #include "GSMCommon.h"
 
 extern "C" {
 #include "convolve.h"
 }
-/* Clipping detection threshold */
-#define CLIP_THRESH     30000.0f
 
+/* Clipping detection threshold */
+#define CLIP_THRESH 30000.0f
 #define TABLESIZE 1024
 
 /** Lookup tables for trigonometric approximation */
-float cosTable[TABLESIZE+1]; // add 1 element for wrap around
-float sinTable[TABLESIZE+1];
+float cosTable[TABLESIZE + 1]; // add 1 element for wrap around
+float sinTable[TABLESIZE + 1];
 
 /** Constants */
-static const float M_PI_F = (float)M_PI;
-static const float M_2PI_F = (float)(2.0*M_PI);
-static const float M_1_2PI_F = 1/M_2PI_F;
+static const float M_PI_F = (float) M_PI;
+static const float M_2PI_F = (float) (2.0 * M_PI);
+static const float M_1_2PI_F = 1 / M_2PI_F;
 
 /* Precomputed rotation vectors */
-static signalVector *GMSKRotationN = NULL;
-static signalVector *GMSKReverseRotationN = NULL;
-static signalVector *GMSKRotation1 = NULL;
-static signalVector *GMSKReverseRotation1 = NULL;
+static signalVector * GMSKRotationN = nullptr;
+static signalVector * GMSKReverseRotationN = nullptr;
+static signalVector * GMSKRotation1 = nullptr;
+static signalVector * GMSKReverseRotation1 = nullptr;
 
 /*
  * RACH and midamble correlation waveforms. Store the buffer separately
@@ -55,20 +32,17 @@ static signalVector *GMSKReverseRotation1 = NULL;
  * perform 16-byte memory alignment required by many SSE instructions.
  */
 struct CorrelationSequence {
-  CorrelationSequence() : sequence(NULL), buffer(NULL)
-  {
-  }
+    CorrelationSequence() = default;
 
-  ~CorrelationSequence()
-  {
-    delete sequence;
-    free(buffer);
-  }
+    ~CorrelationSequence() {
+        delete sequence;
+        free(buffer);
+    }
 
-  signalVector *sequence;
-  void         *buffer;
-  float        toa;
-  complex      gain;
+    signalVector * sequence = nullptr;
+    void * buffer = nullptr;
+    float toa = 0.0;
+    std::complex<float> gain;
 };
 
 /*
@@ -77,124 +51,119 @@ struct CorrelationSequence {
  * for SSE instructions.
  */
 struct PulseSequence {
-  PulseSequence() : c0(NULL), c1(NULL), empty(NULL),
-		    c0_buffer(NULL), c1_buffer(NULL)
-  {
-  }
+    PulseSequence() = default;
 
-  ~PulseSequence()
-  {
-    delete c0;
-    delete c1;
-    delete empty;
-    free(c0_buffer);
-    free(c1_buffer);
-  }
+    ~PulseSequence() {
+        delete c0;
+        delete c1;
+        delete empty;
+        free(c0_buffer);
+        free(c1_buffer);
+    }
 
-  signalVector *c0;
-  signalVector *c1;
-  signalVector *empty;
-  void *c0_buffer;
-  void *c1_buffer;
+    signalVector * c0 = nullptr;
+    signalVector * c1 = nullptr;
+    signalVector * empty = nullptr;
+    void * c0_buffer = nullptr;
+    void * c1_buffer = nullptr;
 };
 
-CorrelationSequence *gMidambles[] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
-CorrelationSequence *gRACHSequence = NULL;
-PulseSequence *GSMPulse = NULL;
-PulseSequence *GSMPulse1 = NULL;
+CorrelationSequence * gMidambles[] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+CorrelationSequence * gRACHSequence = nullptr;
+PulseSequence * GSMPulse = nullptr;
+PulseSequence * GSMPulse1 = nullptr;
 
-void sigProcLibDestroy()
-{
-  for (int i = 0; i < 8; i++) {
-    delete gMidambles[i];
-    gMidambles[i] = NULL;
-  }
+void sigProcLibDestroy() {
+    for (int i = 0; i < 8; i++) {
+        delete gMidambles[i];
+        gMidambles[i] = nullptr;
+    }
 
-  delete GMSKRotationN;
-  delete GMSKReverseRotationN;
-  delete GMSKRotation1;
-  delete GMSKReverseRotation1;
-  delete gRACHSequence;
-  delete GSMPulse;
-  delete GSMPulse1;
+    delete GMSKRotationN;
+    delete GMSKReverseRotationN;
+    delete GMSKRotation1;
+    delete GMSKReverseRotation1;
+    delete gRACHSequence;
+    delete GSMPulse;
+    delete GSMPulse1;
 
-  GMSKRotationN = NULL;
-  GMSKRotation1 = NULL;
-  GMSKReverseRotationN = NULL;
-  GMSKReverseRotation1 = NULL;
-  gRACHSequence = NULL;
-  GSMPulse = NULL;
-  GSMPulse1 = NULL;
+    GMSKRotationN = nullptr;
+    GMSKRotation1 = nullptr;
+    GMSKReverseRotationN = nullptr;
+    GMSKReverseRotation1 = nullptr;
+    gRACHSequence = nullptr;
+    GSMPulse = nullptr;
+    GSMPulse1 = nullptr;
 }
 
 // dB relative to 1.0.
 // if > 1.0, then return 0 dB
 float dB(float x) {
-  
-  float arg = 1.0F;
-  float dB = 0.0F;
-  
-  if (x >= 1.0F) return 0.0F;
-  if (x <= 0.0F) return -200.0F;
 
-  float prevArg = arg;
-  float prevdB = dB;
-  float stepSize = 16.0F;
-  float dBstepSize = 12.0F;
-  while (stepSize > 1.0F) {
-    do {
-      prevArg = arg;
-      prevdB = dB;
-      arg /= stepSize;
-      dB -= dBstepSize;
-    } while (arg > x);
-    arg = prevArg;
-    dB = prevdB;
-    stepSize *= 0.5F;
-    dBstepSize -= 3.0F;
-  }
- return ((arg-x)*(dB-3.0F) + (x-arg*0.5F)*dB)/(arg - arg*0.5F);
+    float arg = 1.0F;
+    float dB = 0.0F;
+
+    if (x >= 1.0F) return 0.0F;
+    if (x <= 0.0F) return -200.0F;
+
+    float prevArg = arg;
+    float prevdB = dB;
+    float stepSize = 16.0F;
+    float dBstepSize = 12.0F;
+    while (stepSize > 1.0F) {
+        do {
+            prevArg = arg;
+            prevdB = dB;
+            arg /= stepSize;
+            dB -= dBstepSize;
+        } while (arg > x);
+        arg = prevArg;
+        dB = prevdB;
+        stepSize *= 0.5F;
+        dBstepSize -= 3.0F;
+    }
+    return ((arg - x) * (dB - 3.0F) + (x - arg * 0.5F) * dB) / (arg - arg * 0.5F);
 
 }
 
 // 10^(-dB/10), inverse of dB func.
 float dBinv(float x) {
-  
-  float arg = 1.0F;
-  float dB = 0.0F;
-  
-  if (x >= 0.0F) return 1.0F;
-  if (x <= -200.0F) return 0.0F;
 
-  float prevArg = arg;
-  float prevdB = dB;
-  float stepSize = 16.0F;
-  float dBstepSize = 12.0F;
-  while (stepSize > 1.0F) {
-    do {
-      prevArg = arg;
-      prevdB = dB;
-      arg /= stepSize;
-      dB -= dBstepSize;
-    } while (dB > x);
-    arg = prevArg;
-    dB = prevdB;
-    stepSize *= 0.5F;
-    dBstepSize -= 3.0F;
-  }
+    float arg = 1.0F;
+    float dB = 0.0F;
 
-  return ((dB-x)*(arg*0.5F)+(x-(dB-3.0F))*(arg))/3.0F;
+    if (x >= 0.0F) return 1.0F;
+    if (x <= -200.0F) return 0.0F;
+
+    float prevArg = arg;
+    float prevdB = dB;
+    float stepSize = 16.0F;
+    float dBstepSize = 12.0F;
+    while (stepSize > 1.0F) {
+        do {
+            prevArg = arg;
+            prevdB = dB;
+            arg /= stepSize;
+            dB -= dBstepSize;
+        } while (dB > x);
+        arg = prevArg;
+        dB = prevdB;
+        stepSize *= 0.5F;
+        dBstepSize -= 3.0F;
+    }
+
+    return ((dB - x) * (arg * 0.5F) + (x - (dB - 3.0F)) * (arg)) / 3.0F;
 
 }
 
-float vectorNorm2(const signalVector &x) 
-{
-  signalVector::const_iterator xPtr = x.begin();
-  float Energy = 0.0;
-  for (;xPtr != x.end();xPtr++) {
-	Energy += xPtr->norm2();
-  }
-  return Energy;
+float vectorNorm2(const signalVector &x) {
+    signalVector::const_iterator xPtr = x.begin();
+    float Energy = 0.0;
+    for (; xPtr != x.end(); xPtr++) {
+        //Energy += xPtr->norm2();
+        Energy += std::norm(*xPtr);
+    }
+    return Energy;
 }
 
 
@@ -218,328 +187,313 @@ float vectorNorm2(const signalVector &x)
 //}
 
 /** compute sine via lookup table */
-float sinLookup(const float x) 
-{
-  float arg = x*M_1_2PI_F;
-  while (arg > 1.0F) arg -= 1.0F;
-  while (arg < 0.0F) arg += 1.0F;
+float sinLookup(const float x) {
+    float arg = x * M_1_2PI_F;
+    while (arg > 1.0F) arg -= 1.0F;
+    while (arg < 0.0F) arg += 1.0F;
 
-  const float argT = arg*((float)TABLESIZE);
-  const int argI = (int)argT;
-  const float delta = argT-argI;
-  const float iDelta = 1.0F-delta;
-  return iDelta*sinTable[argI] + delta*sinTable[argI+1];
+    const float argT = arg * ((float) TABLESIZE);
+    const int argI = (int) argT;
+    const float delta = argT - argI;
+    const float iDelta = 1.0F - delta;
+    return iDelta * sinTable[argI] + delta * sinTable[argI + 1];
 }
 
 
 /** compute e^(-jx) via lookup table. */
-complex expjLookup(float x)
-{
-  float arg = x*M_1_2PI_F;
-  while (arg > 1.0F) arg -= 1.0F;
-  while (arg < 0.0F) arg += 1.0F;
+std::complex<float> expjLookup(float x) {
+    float arg = x * M_1_2PI_F;
+    while (arg > 1.0F) arg -= 1.0F;
+    while (arg < 0.0F) arg += 1.0F;
 
-  const float argT = arg*((float)TABLESIZE);
-  const int argI = (int)argT;
-  const float delta = argT-argI;
-  const float iDelta = 1.0F-delta;
-   return complex(iDelta*cosTable[argI] + delta*cosTable[argI+1],
-		   iDelta*sinTable[argI] + delta*sinTable[argI+1]);
+    const float argT = arg * ((float) TABLESIZE);
+    const int argI = (int) argT;
+    const float delta = argT - argI;
+    const float iDelta = 1.0F - delta;
+    return {iDelta * cosTable[argI] + delta * cosTable[argI + 1], iDelta * sinTable[argI] + delta * sinTable[argI + 1]};
 }
 
 /** Library setup functions */
 void initTrigTables() {
-  for (int i = 0; i < TABLESIZE+1; i++) {
-    cosTable[i] = cos(2.0*M_PI*i/TABLESIZE);
-    sinTable[i] = sin(2.0*M_PI*i/TABLESIZE);
-  }
+    for (int i = 0; i < TABLESIZE + 1; i++) {
+        cosTable[i] = cos(2.0 * M_PI * i / TABLESIZE);
+        sinTable[i] = sin(2.0 * M_PI * i / TABLESIZE);
+    }
 }
 
-void initGMSKRotationTables(int sps)
-{
-  GMSKRotationN = new signalVector(157 * sps);
-  GMSKReverseRotationN = new signalVector(157 * sps);
-  signalVector::iterator rotPtr = GMSKRotationN->begin();
-  signalVector::iterator revPtr = GMSKReverseRotationN->begin();
-  float phase = 0.0;
-  while (rotPtr != GMSKRotationN->end()) {
-    *rotPtr++ = expjLookup(phase);
-    *revPtr++ = expjLookup(-phase);
-    phase += M_PI_F / 2.0F / (float) sps;
-  }
+void initGMSKRotationTables(int sps) {
+    GMSKRotationN = new signalVector(157 * sps);
+    GMSKReverseRotationN = new signalVector(157 * sps);
+    signalVector::iterator rotPtr = GMSKRotationN->begin();
+    signalVector::iterator revPtr = GMSKReverseRotationN->begin();
+    float phase = 0.0;
+    while (rotPtr != GMSKRotationN->end()) {
+        *rotPtr++ = expjLookup(phase);
+        *revPtr++ = expjLookup(-phase);
+        phase += M_PI_F / 2.0F / (float) sps;
+    }
 
-  GMSKRotation1 = new signalVector(157);
-  GMSKReverseRotation1 = new signalVector(157);
-  rotPtr = GMSKRotation1->begin();
-  revPtr = GMSKReverseRotation1->begin();
-  phase = 0.0;
-  while (rotPtr != GMSKRotation1->end()) {
-    *rotPtr++ = expjLookup(phase);
-    *revPtr++ = expjLookup(-phase);
-    phase += M_PI_F / 2.0F;
-  }
-}
-
-static void GMSKRotate(signalVector &x, int sps)
-{
-  signalVector::iterator rotPtr, xPtr = x.begin();
-
-  if (sps == 1)
+    GMSKRotation1 = new signalVector(157);
+    GMSKReverseRotation1 = new signalVector(157);
     rotPtr = GMSKRotation1->begin();
-  else
-    rotPtr = GMSKRotationN->begin();
-
-  if (x.isRealOnly()) {
-    while (xPtr < x.end()) {
-      *xPtr = *rotPtr++ * (xPtr->real());
-      xPtr++;
+    revPtr = GMSKReverseRotation1->begin();
+    phase = 0.0;
+    while (rotPtr != GMSKRotation1->end()) {
+        *rotPtr++ = expjLookup(phase);
+        *revPtr++ = expjLookup(-phase);
+        phase += M_PI_F / 2.0F;
     }
-  }
-  else {
-    while (xPtr < x.end()) {
-      *xPtr = *rotPtr++ * (*xPtr);
-      xPtr++;
-    }
-  }
 }
 
-static void GMSKReverseRotate(signalVector &x, int sps)
-{
-  signalVector::iterator rotPtr, xPtr= x.begin();
+static void GMSKRotate(signalVector &x, int sps) {
+    signalVector::iterator rotPtr, xPtr = x.begin();
 
-  if (sps == 1)
-    rotPtr = GMSKReverseRotation1->begin();
-  else
-    rotPtr = GMSKReverseRotationN->begin();
+    if (sps == 1)
+        rotPtr = GMSKRotation1->begin();
+    else
+        rotPtr = GMSKRotationN->begin();
 
-  if (x.isRealOnly()) {
-    while (xPtr < x.end()) {
-      *xPtr = *rotPtr++ * (xPtr->real());
-      xPtr++;
+    if (x.isRealOnly()) {
+        while (xPtr < x.end()) {
+            *xPtr = *rotPtr++ * (xPtr->real());
+            xPtr++;
+        }
+    } else {
+        while (xPtr < x.end()) {
+            *xPtr = *rotPtr++ * (*xPtr);
+            xPtr++;
+        }
     }
-  }
-  else {
-    while (xPtr < x.end()) {
-      *xPtr = *rotPtr++ * (*xPtr);
-      xPtr++;
-    }
-  }
 }
 
-signalVector *convolve(const signalVector *x,
-                        const signalVector *h,
-                        signalVector *y,
-                        ConvType spanType, int start,
-                        unsigned len, unsigned step, int offset)
-{
-  int rc, head = 0, tail = 0;
-  bool alloc = false, append = false;
-  const signalVector *_x = NULL;
+static void GMSKReverseRotate(signalVector &x, int sps) {
+    signalVector::iterator rotPtr, xPtr = x.begin();
 
-  if (!x || !h)
-    return NULL;
+    if (sps == 1)
+        rotPtr = GMSKReverseRotation1->begin();
+    else
+        rotPtr = GMSKReverseRotationN->begin();
 
-  switch (spanType) {
-  case START_ONLY:
-    start = 0;
-    head = h->size();
-    len = x->size();
-    append = true;
-    break;
-  case NO_DELAY:
-    start = h->size() / 2;
-    head = start;
-    tail = start;
-    len = x->size();
-    append = true;
-    break;
-  case CUSTOM:
-    if (start < h->size() - 1) {
-      head = h->size() - start;
-      append = true;
+    if (x.isRealOnly()) {
+        while (xPtr < x.end()) {
+            *xPtr = *rotPtr++ * (xPtr->real());
+            xPtr++;
+        }
+    } else {
+        while (xPtr < x.end()) {
+            *xPtr = *rotPtr++ * (*xPtr);
+            xPtr++;
+        }
     }
-    if (start + len > x->size()) {
-      tail = start + len - x->size();
-      append = true;
-    }
-    break;
-  default:
-    return NULL;
-  }
-
-  /*
-   * Error if the output vector is too small. Create the output vector
-   * if the pointer is NULL.
-   */
-  if (y && (len > y->size()))
-    return NULL;
-  if (!y) {
-    y = new signalVector(len);
-    alloc = true;
-  }
-
-  /* Prepend or post-pend the input vector if the parameters require it */
-  if (append)
-    _x = new signalVector(*x, head, tail);
-  else
-    _x = x;
-
-  /*
-   * Four convovle types:
-   *   1. Complex-Real (aligned)
-   *   2. Complex-Complex (aligned)
-   *   3. Complex-Real (!aligned)
-   *   4. Complex-Complex (!aligned)
-   */
-  if (h->isRealOnly() && h->isAligned()) {
-    rc = convolve_real((float *) _x->begin(), _x->size(),
-                       (float *) h->begin(), h->size(),
-                       (float *) y->begin(), y->size(),
-                       start, len, step, offset);
-  } else if (!h->isRealOnly() && h->isAligned()) {
-    rc = convolve_complex((float *) _x->begin(), _x->size(),
-                          (float *) h->begin(), h->size(),
-                          (float *) y->begin(), y->size(),
-                          start, len, step, offset);
-  } else if (h->isRealOnly() && !h->isAligned()) {
-    rc = base_convolve_real((float *) _x->begin(), _x->size(),
-                            (float *) h->begin(), h->size(),
-                            (float *) y->begin(), y->size(),
-                            start, len, step, offset);
-  } else if (!h->isRealOnly() && !h->isAligned()) {
-    rc = base_convolve_complex((float *) _x->begin(), _x->size(),
-                               (float *) h->begin(), h->size(),
-                               (float *) y->begin(), y->size(),
-                               start, len, step, offset);
-  } else {
-    rc = -1;
-  }
-
-  if (append)
-    delete _x;
-
-  if (rc < 0) {
-    if (alloc)
-      delete y;
-    return NULL;
-  }
-
-  return y;
 }
 
-static bool generateC1Pulse(int sps, PulseSequence *pulse)
-{
-  int len;
+signalVector * convolve(const signalVector * x, const signalVector * h, signalVector * y,
+                        ConvType spanType, int start, unsigned len, unsigned step, int offset) {
+    int rc, head = 0, tail = 0;
+    bool alloc = false, append = false;
+    const signalVector * _x = NULL;
 
-  if (!pulse)
-    return false;
+    if (!x || !h)
+        return NULL;
 
-  switch (sps) {
-  case 4:
-    len = 8;
-    break;
-  default:
-    return false;
-  }
-
-  pulse->c1_buffer = convolve_h_alloc(len);
-  pulse->c1 = new signalVector((complex *)
-                                  pulse->c1_buffer, 0, len);
-  pulse->c1->isRealOnly(true);
-
-  /* Enable alignment for SSE usage */
-  pulse->c1->setAligned(true);
-
-  signalVector::iterator xP = pulse->c1->begin();
-
-  switch (sps) {
-  case 4:
-    /* BT = 0.30 */
-    *xP++ = 0.0;
-    *xP++ = 8.16373112e-03;
-    *xP++ = 2.84385729e-02;
-    *xP++ = 5.64158904e-02;
-    *xP++ = 7.05463553e-02;
-    *xP++ = 5.64158904e-02;
-    *xP++ = 2.84385729e-02;
-    *xP++ = 8.16373112e-03;
-  }
-
-  return true;
-}
-
-static PulseSequence *generateGSMPulse(int sps, int symbolLength)
-{
-  int len;
-  float arg, avg, center;
-  PulseSequence *pulse;
-
-  /* Store a single tap filter used for correlation sequence generation */
-  pulse = new PulseSequence();
-  pulse->empty = new signalVector(1);
-  pulse->empty->isRealOnly(true);
-  *(pulse->empty->begin()) = 1.0f;
-
-  /*
-   * For 4 samples-per-symbol use a precomputed single pulse Laurent
-   * approximation. This should yields below 2 degrees of phase error at
-   * the modulator output. Use the existing pulse approximation for all
-   * other oversampling factors.
-   */
-  switch (sps) {
-  case 4:
-    len = 16;
-    break;
-  default:
-    len = sps * symbolLength;
-    if (len < 4)
-      len = 4;
-  }
-
-  pulse->c0_buffer = convolve_h_alloc(len);
-  pulse->c0 = new signalVector((complex *) pulse->c0_buffer, 0, len);
-  pulse->c0->isRealOnly(true);
-
-  /* Enable alingnment for SSE usage */
-  pulse->c0->setAligned(true);
-
-  signalVector::iterator xP = pulse->c0->begin();
-
-  if (sps == 4) {
-    *xP++ = 0.0;
-    *xP++ = 4.46348606e-03;
-    *xP++ = 2.84385729e-02;
-    *xP++ = 1.03184855e-01;
-    *xP++ = 2.56065552e-01;
-    *xP++ = 4.76375085e-01;
-    *xP++ = 7.05961177e-01;
-    *xP++ = 8.71291644e-01;
-    *xP++ = 9.29453645e-01;
-    *xP++ = 8.71291644e-01;
-    *xP++ = 7.05961177e-01;
-    *xP++ = 4.76375085e-01;
-    *xP++ = 2.56065552e-01;
-    *xP++ = 1.03184855e-01;
-    *xP++ = 2.84385729e-02;
-    *xP++ = 4.46348606e-03;
-    generateC1Pulse(sps, pulse);
-  } else {
-    center = (float) (len - 1.0) / 2.0;
-
-    /* GSM pulse approximation */
-    for (int i = 0; i < len; i++) {
-      arg = ((float) i - center) / (float) sps;
-      *xP++ = 0.96 * exp(-1.1380 * arg * arg -
-			 0.527 * arg * arg * arg * arg);
+    switch (spanType) {
+        case START_ONLY:
+            start = 0;
+            head = h->size();
+            len = x->size();
+            append = true;
+            break;
+        case NO_DELAY:
+            start = h->size() / 2;
+            head = start;
+            tail = start;
+            len = x->size();
+            append = true;
+            break;
+        case CUSTOM:
+            if (start < h->size() - 1) {
+                head = h->size() - start;
+                append = true;
+            }
+            if (start + len > x->size()) {
+                tail = start + len - x->size();
+                append = true;
+            }
+            break;
+        default:
+            return NULL;
     }
 
-    avg = sqrtf(vectorNorm2(*pulse->c0) / sps);
-    xP = pulse->c0->begin();
-    for (int i = 0; i < len; i++)
-      *xP++ /= avg;
-  }
+    /*
+     * Error if the output vector is too small. Create the output vector
+     * if the pointer is NULL.
+     */
+    if (y && (len > y->size()))
+        return NULL;
+    if (!y) {
+        y = new signalVector(len);
+        alloc = true;
+    }
 
-  return pulse;
+    /* Prepend or post-pend the input vector if the parameters require it */
+    if (append)
+        _x = new signalVector(*x, head, tail);
+    else
+        _x = x;
+
+    /*
+     * Four convovle types:
+     *   1. Complex-Real (aligned)
+     *   2. Complex-Complex (aligned)
+     *   3. Complex-Real (!aligned)
+     *   4. Complex-Complex (!aligned)
+     */
+    if (h->isRealOnly() && h->isAligned()) {
+        rc = convolve_real((float *) _x->begin(), _x->size(),
+                           (float *) h->begin(), h->size(),
+                           (float *) y->begin(), y->size(),
+                           start, len, step, offset);
+    } else if (!h->isRealOnly() && h->isAligned()) {
+        rc = convolve_complex((float *) _x->begin(), _x->size(),
+                              (float *) h->begin(), h->size(),
+                              (float *) y->begin(), y->size(),
+                              start, len, step, offset);
+    } else if (h->isRealOnly() && !h->isAligned()) {
+        rc = base_convolve_real((float *) _x->begin(), _x->size(),
+                                (float *) h->begin(), h->size(),
+                                (float *) y->begin(), y->size(),
+                                start, len, step, offset);
+    } else if (!h->isRealOnly() && !h->isAligned()) {
+        rc = base_convolve_complex((float *) _x->begin(), _x->size(),
+                                   (float *) h->begin(), h->size(),
+                                   (float *) y->begin(), y->size(),
+                                   start, len, step, offset);
+    } else {
+        rc = -1;
+    }
+
+    if (append)
+        delete _x;
+
+    if (rc < 0) {
+        if (alloc)
+            delete y;
+        return NULL;
+    }
+
+    return y;
+}
+
+static bool generateC1Pulse(int sps, PulseSequence * pulse) {
+    int len;
+
+    if (!pulse)
+        return false;
+
+    switch (sps) {
+        case 4:
+            len = 8;
+            break;
+        default:
+            return false;
+    }
+
+    pulse->c1_buffer = convolve_h_alloc(len);
+    pulse->c1 = new signalVector((std::complex<float> *) pulse->c1_buffer, 0, len);
+    pulse->c1->isRealOnly(true);
+
+    /* Enable alignment for SSE usage */
+    pulse->c1->setAligned(true);
+
+    signalVector::iterator xP = pulse->c1->begin();
+
+    switch (sps) {
+        case 4:
+            /* BT = 0.30 */
+            *xP++ = 0.0;
+            *xP++ = 8.16373112e-03;
+            *xP++ = 2.84385729e-02;
+            *xP++ = 5.64158904e-02;
+            *xP++ = 7.05463553e-02;
+            *xP++ = 5.64158904e-02;
+            *xP++ = 2.84385729e-02;
+            *xP++ = 8.16373112e-03;
+    }
+
+    return true;
+}
+
+static PulseSequence * generateGSMPulse(int sps, int symbolLength) {
+    int len;
+    float arg, avg, center;
+    PulseSequence * pulse;
+
+    /* Store a single tap filter used for correlation sequence generation */
+    pulse = new PulseSequence();
+    pulse->empty = new signalVector(1);
+    pulse->empty->isRealOnly(true);
+    *(pulse->empty->begin()) = 1.0f;
+
+    /*
+     * For 4 samples-per-symbol use a precomputed single pulse Laurent
+     * approximation. This should yields below 2 degrees of phase error at
+     * the modulator output. Use the existing pulse approximation for all
+     * other oversampling factors.
+     */
+    switch (sps) {
+        case 4:
+            len = 16;
+            break;
+        default:
+            len = sps * symbolLength;
+            if (len < 4)
+                len = 4;
+    }
+
+    pulse->c0_buffer = convolve_h_alloc(len);
+    pulse->c0 = new signalVector((std::complex<float> *) pulse->c0_buffer, 0, len);
+    pulse->c0->isRealOnly(true);
+
+    /* Enable alingnment for SSE usage */
+    pulse->c0->setAligned(true);
+
+    signalVector::iterator xP = pulse->c0->begin();
+
+    if (sps == 4) {
+        *xP++ = 0.0;
+        *xP++ = 4.46348606e-03;
+        *xP++ = 2.84385729e-02;
+        *xP++ = 1.03184855e-01;
+        *xP++ = 2.56065552e-01;
+        *xP++ = 4.76375085e-01;
+        *xP++ = 7.05961177e-01;
+        *xP++ = 8.71291644e-01;
+        *xP++ = 9.29453645e-01;
+        *xP++ = 8.71291644e-01;
+        *xP++ = 7.05961177e-01;
+        *xP++ = 4.76375085e-01;
+        *xP++ = 2.56065552e-01;
+        *xP++ = 1.03184855e-01;
+        *xP++ = 2.84385729e-02;
+        *xP++ = 4.46348606e-03;
+        generateC1Pulse(sps, pulse);
+    } else {
+        center = (float) (len - 1.0) / 2.0;
+
+        /* GSM pulse approximation */
+        for (int i = 0; i < len; i++) {
+            arg = ((float) i - center) / (float) sps;
+            *xP++ = 0.96 * exp(-1.1380 * arg * arg -
+                               0.527 * arg * arg * arg * arg);
+        }
+
+        avg = sqrtf(vectorNorm2(*pulse->c0) / sps);
+        xP = pulse->c0->begin();
+        for (int i = 0; i < len; i++)
+            *xP++ /= avg;
+    }
+
+    return pulse;
 }
 
 //signalVector* frequencyShift(signalVector *y,
@@ -607,238 +561,226 @@ static PulseSequence *generateGSMPulse(int sps, int symbolLength)
 //}
 
 /* soft output slicer */
-bool vectorSlicer(signalVector *x) 
-{
-
-  signalVector::iterator xP = x->begin();
-  signalVector::iterator xPEnd = x->end();
-  while (xP < xPEnd) {
-    *xP = (complex) (0.5*(xP->real()+1.0F));
-    if (xP->real() > 1.0) *xP = 1.0;
-    if (xP->real() < 0.0) *xP = 0.0;
-    xP++;
-  }
-  return true;
+bool vectorSlicer(signalVector * x) {
+    signalVector::iterator xP = x->begin();
+    signalVector::iterator xPEnd = x->end();
+    while (xP < xPEnd) {
+        *xP = (std::complex<float>) (0.5 * (xP->real() + 1.0F));
+        if (xP->real() > 1.0) *xP = 1.0;
+        if (xP->real() < 0.0) *xP = 0.0;
+        xP++;
+    }
+    return true;
 }
 
-static signalVector *rotateBurst(const BitVector &wBurst,
-                                 int guardPeriodLength, int sps)
-{
-  int burst_len;
-  signalVector *pulse, rotated, *shaped;
-  signalVector::iterator itr;
+static signalVector * rotateBurst(const BitVector &wBurst, int guardPeriodLength, int sps) {
+    int burst_len;
+    signalVector * pulse, rotated, * shaped;
+    signalVector::iterator itr;
 
-  pulse = GSMPulse1->empty;
-  burst_len = sps * (wBurst.size() + guardPeriodLength);
-  rotated = signalVector(burst_len);
-  itr = rotated.begin();
+    pulse = GSMPulse1->empty;
+    burst_len = sps * (wBurst.size() + guardPeriodLength);
+    rotated = signalVector(burst_len);
+    itr = rotated.begin();
 
-  for (unsigned i = 0; i < wBurst.size(); i++) {
-    *itr = 2.0 * (wBurst[i] & 0x01) - 1.0;
-    itr += sps;
-  }
+    for (unsigned i = 0; i < wBurst.size(); i++) {
+        *itr = 2.0 * (wBurst[i] & 0x01) - 1.0;
+        itr += sps;
+    }
 
-  GMSKRotate(rotated, sps);
-  rotated.isRealOnly(false);
+    GMSKRotate(rotated, sps);
+    rotated.isRealOnly(false);
 
-  /* Dummy filter operation */
-  shaped = convolve(&rotated, pulse, NULL, START_ONLY);
-  if (!shaped)
-    return NULL;
+    /* Dummy filter operation */
+    shaped = convolve(&rotated, pulse, nullptr, START_ONLY);
+    if (!shaped)
+        return nullptr;
 
-  return shaped;
+    return shaped;
 }
 
-static signalVector *modulateBurstLaurent(const BitVector &bits,
-					  int guard_len, int sps)
-{
-  int burst_len;
-  float phase;
-  signalVector *c0_pulse, *c1_pulse, c0_burst, c1_burst, *c0_shaped, *c1_shaped;
-  signalVector::iterator c0_itr, c1_itr;
+static signalVector * modulateBurstLaurent(const BitVector &bits, int guard_len, int sps) {
+    int burst_len;
+    float phase;
+    signalVector * c0_pulse, * c1_pulse, c0_burst, c1_burst, * c0_shaped, * c1_shaped;
+    signalVector::iterator c0_itr, c1_itr;
 
-  /*
-   * Apply before and after bits to reduce phase error at burst edges.
-   * Make sure there is enough room in the burst to accomodate all bits.
-   */
-  if (guard_len < 4)
-    guard_len = 4;
+    /*
+     * Apply before and after bits to reduce phase error at burst edges.
+     * Make sure there is enough room in the burst to accomodate all bits.
+     */
+    if (guard_len < 4)
+        guard_len = 4;
 
-  c0_pulse = GSMPulse->c0;
-  c1_pulse = GSMPulse->c1;
+    c0_pulse = GSMPulse->c0;
+    c1_pulse = GSMPulse->c1;
 
-  burst_len = sps * (bits.size() + guard_len);
+    burst_len = sps * (bits.size() + guard_len);
 
-  c0_burst = signalVector(burst_len);
-  c0_burst.isRealOnly(true);
-  c0_itr = c0_burst.begin();
+    c0_burst = signalVector(burst_len);
+    c0_burst.isRealOnly(true);
+    c0_itr = c0_burst.begin();
 
-  c1_burst = signalVector(burst_len);
-  c1_burst.isRealOnly(true);
-  c1_itr = c1_burst.begin();
+    c1_burst = signalVector(burst_len);
+    c1_burst.isRealOnly(true);
+    c1_itr = c1_burst.begin();
 
-  /* Padded differential start bits */
-  *c0_itr = 2.0 * (0x00 & 0x01) - 1.0;
-  c0_itr += sps;
-
-  /* Main burst bits */
-  for (unsigned i = 0; i < bits.size(); i++) {
-    *c0_itr = 2.0 * (bits[i] & 0x01) - 1.0;
+    /* Padded differential start bits */
+    *c0_itr = 2.0 * (0x00 & 0x01) - 1.0;
     c0_itr += sps;
-  }
 
-  /* Padded differential end bits */
-  *c0_itr = 2.0 * (0x01 & 0x01) - 1.0;
+    /* Main burst bits */
+    for (unsigned i = 0; i < bits.size(); i++) {
+        *c0_itr = 2.0 * (bits[i] & 0x01) - 1.0;
+        c0_itr += sps;
+    }
 
-  /* Generate C0 phase coefficients */
-  GMSKRotate(c0_burst, sps);
-  c0_burst.isRealOnly(false);
+    /* Padded differential end bits */
+    *c0_itr = 2.0 * (0x01 & 0x01) - 1.0;
 
-  c0_itr = c0_burst.begin();
-  c0_itr += sps * 2;
-  c1_itr += sps * 2;
+    /* Generate C0 phase coefficients */
+    GMSKRotate(c0_burst, sps);
+    c0_burst.isRealOnly(false);
 
-  /* Start magic */
-  phase = 2.0 * ((0x01 & 0x01) ^ (0x01 & 0x01)) - 1.0;
-  *c1_itr = *c0_itr * Complex<float>(0, phase);
-  c0_itr += sps;
-  c1_itr += sps;
+    c0_itr = c0_burst.begin();
+    c0_itr += sps * 2;
+    c1_itr += sps * 2;
 
-  /* Generate C1 phase coefficients */
-  for (unsigned i = 2; i < bits.size(); i++) {
-    phase = 2.0 * ((bits[i - 1] & 0x01) ^ (bits[i - 2] & 0x01)) - 1.0;
-    *c1_itr = *c0_itr * Complex<float>(0, phase);
-
+    /* Start magic */
+    phase = 2.0 * ((0x01 & 0x01) ^ (0x01 & 0x01)) - 1.0;
+    *c1_itr = *c0_itr * std::complex<float>(0, phase);
     c0_itr += sps;
     c1_itr += sps;
-  }
 
-  /* End magic */
-  int i = bits.size();
-  phase = 2.0 * ((bits[i-1] & 0x01) ^ (bits[i-2] & 0x01)) - 1.0;
-  *c1_itr = *c0_itr * Complex<float>(0, phase);
+    /* Generate C1 phase coefficients */
+    for (unsigned i = 2; i < bits.size(); i++) {
+        phase = 2.0 * ((bits[i - 1] & 0x01) ^ (bits[i - 2] & 0x01)) - 1.0;
+        *c1_itr = *c0_itr * std::complex<float>(0, phase);
 
-  /* Primary (C0) and secondary (C1) pulse shaping */
-  c0_shaped = convolve(&c0_burst, c0_pulse, NULL, START_ONLY);
-  c1_shaped = convolve(&c1_burst, c1_pulse, NULL, START_ONLY);
+        c0_itr += sps;
+        c1_itr += sps;
+    }
 
-  /* Sum shaped outputs into C0 */
-  c0_itr = c0_shaped->begin();
-  c1_itr = c1_shaped->begin();
-  for (unsigned i = 0; i < c0_shaped->size(); i++ )
-    *c0_itr++ += *c1_itr++;
+    /* End magic */
+    int i = bits.size();
+    phase = 2.0 * ((bits[i - 1] & 0x01) ^ (bits[i - 2] & 0x01)) - 1.0;
+    *c1_itr = *c0_itr * std::complex<float>(0, phase);
 
-  delete c1_shaped;
+    /* Primary (C0) and secondary (C1) pulse shaping */
+    c0_shaped = convolve(&c0_burst, c0_pulse, nullptr, START_ONLY);
+    c1_shaped = convolve(&c1_burst, c1_pulse, nullptr, START_ONLY);
 
-  return c0_shaped;
+    /* Sum shaped outputs into C0 */
+    c0_itr = c0_shaped->begin();
+    c1_itr = c1_shaped->begin();
+    for (unsigned i = 0; i < c0_shaped->size(); i++)
+        *c0_itr++ += *c1_itr++;
+
+    delete c1_shaped;
+
+    return c0_shaped;
 }
 
-static signalVector *modulateBurstBasic(const BitVector &bits,
-					int guard_len, int sps)
-{
-  int burst_len;
-  signalVector *pulse, burst, *shaped;
-  signalVector::iterator burst_itr;
+static signalVector * modulateBurstBasic(const BitVector &bits, int guard_len, int sps) {
+    int burst_len;
+    signalVector * pulse, burst, * shaped;
+    signalVector::iterator burst_itr;
 
-  if (sps == 1)
-    pulse = GSMPulse1->c0;
-  else
-    pulse = GSMPulse->c0;
+    if (sps == 1)
+        pulse = GSMPulse1->c0;
+    else
+        pulse = GSMPulse->c0;
 
-  burst_len = sps * (bits.size() + guard_len);
+    burst_len = sps * (bits.size() + guard_len);
 
-  burst = signalVector(burst_len);
-  burst.isRealOnly(true);
-  burst_itr = burst.begin();
+    burst = signalVector(burst_len);
+    burst.isRealOnly(true);
+    burst_itr = burst.begin();
 
-  /* Raw bits are not differentially encoded */
-  for (unsigned i = 0; i < bits.size(); i++) {
-    *burst_itr = 2.0 * (bits[i] & 0x01) - 1.0;
-    burst_itr += sps;
-  }
+    /* Raw bits are not differentially encoded */
+    for (unsigned i = 0; i < bits.size(); i++) {
+        *burst_itr = 2.0 * (bits[i] & 0x01) - 1.0;
+        burst_itr += sps;
+    }
 
-  GMSKRotate(burst, sps);
-  burst.isRealOnly(false);
+    GMSKRotate(burst, sps);
+    burst.isRealOnly(false);
 
-  /* Single Gaussian pulse approximation shaping */
-  shaped = convolve(&burst, pulse, NULL, START_ONLY);
+    /* Single Gaussian pulse approximation shaping */
+    shaped = convolve(&burst, pulse, NULL, START_ONLY);
 
-  return shaped;
+    return shaped;
 }
 
 /* Assume input bits are not differentially encoded */
-signalVector *modulateBurst(const BitVector &wBurst, int guardPeriodLength,
-			    int sps, bool emptyPulse)
-{
-  if (emptyPulse)
-    return rotateBurst(wBurst, guardPeriodLength, sps);
-  else if (sps == 4)
-    return modulateBurstLaurent(wBurst, guardPeriodLength, sps);
-  else
-    return modulateBurstBasic(wBurst, guardPeriodLength, sps);
+signalVector * modulateBurst(const BitVector &wBurst, int guardPeriodLength, int sps, bool emptyPulse) {
+    if (emptyPulse)
+        return rotateBurst(wBurst, guardPeriodLength, sps);
+    else if (sps == 4)
+        return modulateBurstLaurent(wBurst, guardPeriodLength, sps);
+    else
+        return modulateBurstBasic(wBurst, guardPeriodLength, sps);
 }
 
-float sinc(float x)
-{
-  if ((x >= 0.01F) || (x <= -0.01F)) return (sinLookup(x)/x);
-  return 1.0F;
+float sinc(float x) {
+    if ((x >= 0.01F) || (x <= -0.01F)) return (sinLookup(x) / x);
+    return 1.0F;
 }
 
-bool delayVector(signalVector &wBurst, float delay)
-{
-  int whole, h_len = 20;
-  float frac;
-  complex *data;
-  signalVector *h, *shift;
-  signalVector::iterator itr;
+bool delayVector(signalVector &wBurst, float delay) {
+    int whole, h_len = 20;
+    float frac;
+    std::complex<float> * data;
+    signalVector * h, * shift;
+    signalVector::iterator itr;
 
-  whole = floor(delay);
-  frac = delay - whole;
+    whole = floor(delay);
+    frac = delay - whole;
 
-  /* Sinc interpolated fractional shift (if allowable) */
-  if (fabs(frac) > 1e-2) {
-    data = (complex *) convolve_h_alloc(h_len);
-    h = new signalVector(data, 0, h_len);
-    h->setAligned(true);
-    h->isRealOnly(true);
+    /* Sinc interpolated fractional shift (if allowable) */
+    if (fabs(frac) > 1e-2) {
+        data = (std::complex<float> *) convolve_h_alloc(h_len);
+        h = new signalVector(data, 0, h_len);
+        h->setAligned(true);
+        h->isRealOnly(true);
 
-    itr = h->end();
-    for (int i = 0; i < h_len; i++)
-      *--itr = (complex) sinc(M_PI_F * (i - h_len / 2 - frac));
+        itr = h->end();
+        for (int i = 0; i < h_len; i++)
+            *--itr = (std::complex<float>) sinc(M_PI_F * (i - h_len / 2 - frac));
 
-    shift = convolve(&wBurst, h, NULL, NO_DELAY);
+        shift = convolve(&wBurst, h, NULL, NO_DELAY);
 
-    delete h;
-    free(data);
+        delete h;
+        free(data);
 
-    if (!shift)
-      return false;
+        if (!shift)
+            return false;
 
-    wBurst.clone(*shift);
-    delete shift;
-  }
+        wBurst.clone(*shift);
+        delete shift;
+    }
 
-  /* Integer sample shift */
-  if (whole < 0) {
-    whole = -whole;
-    signalVector::iterator wBurstItr = wBurst.begin();
-    signalVector::iterator shiftedItr = wBurst.begin() + whole;
+    /* Integer sample shift */
+    if (whole < 0) {
+        whole = -whole;
+        signalVector::iterator wBurstItr = wBurst.begin();
+        signalVector::iterator shiftedItr = wBurst.begin() + whole;
 
-    while (shiftedItr < wBurst.end())
-      *wBurstItr++ = *shiftedItr++;
-    while (wBurstItr < wBurst.end())
-      *wBurstItr++ = 0.0;
-  } else {
-    signalVector::iterator wBurstItr = wBurst.end() - 1;
-    signalVector::iterator shiftedItr = wBurst.end() - 1 - whole;
+        while (shiftedItr < wBurst.end())
+            *wBurstItr++ = *shiftedItr++;
+        while (wBurstItr < wBurst.end())
+            *wBurstItr++ = 0.0;
+    } else {
+        signalVector::iterator wBurstItr = wBurst.end() - 1;
+        signalVector::iterator shiftedItr = wBurst.end() - 1 - whole;
 
-    while (shiftedItr >= wBurst.begin())
-      *wBurstItr-- = *shiftedItr--;
-    while (wBurstItr >= wBurst.begin())
-      *wBurstItr-- = 0.0;
-  }
+        while (shiftedItr >= wBurst.begin())
+            *wBurstItr-- = *shiftedItr--;
+        while (wBurstItr >= wBurst.begin())
+            *wBurstItr-- = 0.0;
+    }
 
-  return true;
+    return true;
 }
 
 //signalVector *gaussianNoise(int length,
@@ -862,144 +804,137 @@ bool delayVector(signalVector &wBurst, float delay)
 //  return noise;
 //}
 
-complex interpolatePoint(const signalVector &inSig,
-			 float ix)
-{
-  
-  int start = (int) (floor(ix) - 10);
-  if (start < 0) start = 0;
-  int end = (int) (floor(ix) + 11);
-  if ((unsigned) end > inSig.size()-1) end = inSig.size()-1;
-  
-  complex pVal = 0.0;
-  if (!inSig.isRealOnly()) {
-    for (int i = start; i < end; i++) 
-      pVal += inSig[i] * sinc(M_PI_F*(i-ix));
-  }
-  else {
-    for (int i = start; i < end; i++) 
-      pVal += inSig[i].real() * sinc(M_PI_F*(i-ix));
-  }
-   
-  return pVal;
+std::complex<float> interpolatePoint(const signalVector &inSig, float ix) {
+
+    int start = (int) (floor(ix) - 10);
+    if (start < 0) start = 0;
+    int end = (int) (floor(ix) + 11);
+    if ((unsigned) end > inSig.size() - 1) end = inSig.size() - 1;
+
+    std::complex<float> pVal = std::complex<float>(0.0);
+    if (!inSig.isRealOnly()) {
+        for (int i = start; i < end; i++)
+            pVal += inSig[i] * sinc(M_PI_F * (i - ix));
+    } else {
+        for (int i = start; i < end; i++)
+            pVal += inSig[i].real() * sinc(M_PI_F * (i - ix));
+    }
+
+    return pVal;
 }
 
-static complex fastPeakDetect(const signalVector &rxBurst, float *index)
-{
-  float val, max = 0.0f;
-  complex amp;
-  int _index = -1;
+static std::complex<float> fastPeakDetect(const signalVector &rxBurst, float * index) {
+    float val, max = 0.0f;
+    std::complex<float> amp;
+    int _index = -1;
 
-  for (int i = 0; i < rxBurst.size(); i++) {
-    val = rxBurst[i].norm2();
-    if (val > max) {
-      max = val;
-      _index = i;
-      amp = rxBurst[i];
+    for (int i = 0; i < rxBurst.size(); i++) {
+        //val = rxBurst[i].norm2();
+        val = std::norm(rxBurst[i]);
+        if (val > max) {
+            max = val;
+            _index = i;
+            amp = rxBurst[i];
+        }
     }
-  }
 
-  if (index)
-    *index = (float) _index;
+    if (index)
+        *index = (float) _index;
 
-  return amp;
+    return amp;
 }
 
-complex peakDetect(const signalVector &rxBurst,
-		   float *peakIndex,
-		   float *avgPwr) 
-{
-  
+std::complex<float> peakDetect(const signalVector &rxBurst, float * peakIndex, float * avgPwr) {
+    std::complex<float> maxVal = 0.0;
+    float maxIndex = -1;
+    float sumPower = 0.0;
 
-  complex maxVal = 0.0;
-  float maxIndex = -1;
-  float sumPower = 0.0;
-
-  for (unsigned int i = 0; i < rxBurst.size(); i++) {
-    float samplePower = rxBurst[i].norm2();
-    if (samplePower > maxVal.real()) {
-      maxVal = samplePower;
-      maxIndex = i;
+    for (unsigned int i = 0; i < rxBurst.size(); i++) {
+        //float samplePower = rxBurst[i].norm2();
+        float samplePower = std::norm(rxBurst[i]);
+        if (samplePower > maxVal.real()) {
+            maxVal = samplePower;
+            maxIndex = i;
+        }
+        sumPower += samplePower;
     }
-    sumPower += samplePower;
-  }
 
-  // interpolate around the peak
-  // to save computation, we'll use early-late balancing
-  float earlyIndex = maxIndex-1;
-  float lateIndex = maxIndex+1;
-  
-  float incr = 0.5;
-  while (incr > 1.0/1024.0) {
-    complex earlyP = interpolatePoint(rxBurst,earlyIndex);
-    complex lateP =  interpolatePoint(rxBurst,lateIndex);
-    if (earlyP < lateP) 
-      earlyIndex += incr;
-    else if (earlyP > lateP)
-      earlyIndex -= incr;
-    else break;
-    incr /= 2.0;
-    lateIndex = earlyIndex + 2.0;
-  }
+    // interpolate around the peak
+    // to save computation, we'll use early-late balancing
+    float earlyIndex = maxIndex - 1;
+    float lateIndex = maxIndex + 1;
 
-  maxIndex = earlyIndex + 1.0;
-  maxVal = interpolatePoint(rxBurst,maxIndex);
+    float incr = 0.5;
+    while (incr > 1.0 / 1024.0) {
+        std::complex<float> earlyP = interpolatePoint(rxBurst, earlyIndex);
+        std::complex<float> lateP = interpolatePoint(rxBurst, lateIndex);
+        //if (earlyP < lateP)
+        if (std::norm(earlyP) < std::norm(lateP)) {
+            earlyIndex += incr;
+        //else if (earlyP > lateP)
+        } else if (std::norm(earlyP) > std::norm(lateP)) {
+            earlyIndex -= incr;
+        } else {
+            break;
+        }
+        incr /= 2.0;
+        lateIndex = earlyIndex + 2.0;
+    }
 
-  if (peakIndex!=NULL)
-    *peakIndex = maxIndex;
+    maxIndex = earlyIndex + 1.0;
+    maxVal = interpolatePoint(rxBurst, maxIndex);
 
-  if (avgPwr!=NULL)
-    *avgPwr = (sumPower-maxVal.norm2()) / (rxBurst.size()-1);
+    if (peakIndex != nullptr)
+        *peakIndex = maxIndex;
 
-  return maxVal;
+    if (avgPwr != nullptr)
+        *avgPwr = (sumPower - std::norm(maxVal)) / (rxBurst.size() - 1);
+
+    return maxVal;
 
 }
 
-void scaleVector(signalVector &x,
-		 complex scale)
-{
-  signalVector::iterator xP = x.begin();
-  signalVector::iterator xPEnd = x.end();
-  if (!x.isRealOnly()) {
-    while (xP < xPEnd) {
-      *xP = *xP * scale;
-      xP++;
+void scaleVector(signalVector &x, std::complex<float> scale) {
+    signalVector::iterator xP = x.begin();
+    signalVector::iterator xPEnd = x.end();
+    if (!x.isRealOnly()) {
+        while (xP < xPEnd) {
+            *xP = *xP * scale;
+            xP++;
+        }
+    } else {
+        while (xP < xPEnd) {
+            *xP = xP->real() * scale;
+            xP++;
+        }
     }
-  }
-  else {
-    while (xP < xPEnd) {
-      *xP = xP->real() * scale;
-      xP++;
-    }
-  }
 }
 
 /** in-place conjugation */
-void conjugateVector(signalVector &x)
-{
-  if (x.isRealOnly()) return;
-  signalVector::iterator xP = x.begin();
-  signalVector::iterator xPEnd = x.end();
-  while (xP < xPEnd) {
-    *xP = xP->conj();
-    xP++;
-  }
+void conjugateVector(signalVector &x) {
+    if (x.isRealOnly()) return;
+    signalVector::iterator xP = x.begin();
+    signalVector::iterator xPEnd = x.end();
+    while (xP < xPEnd) {
+        //*xP = xP->conj();
+        *xP = std::conj(*xP);
+        xP++;
+    }
 }
 
 
 // in-place addition!!
-bool addVector(signalVector &x,
-	       signalVector &y)
-{
-  signalVector::iterator xP = x.begin();
-  signalVector::iterator yP = y.begin();
-  signalVector::iterator xPEnd = x.end();
-  signalVector::iterator yPEnd = y.end();
-  while ((xP < xPEnd) && (yP < yPEnd)) {
-    *xP = *xP + *yP;
-    xP++; yP++;
-  }
-  return true;
+bool addVector(signalVector &x, signalVector &y) {
+    signalVector::iterator xP = x.begin();
+    signalVector::iterator yP = y.begin();
+    signalVector::iterator xPEnd = x.end();
+    signalVector::iterator yPEnd = y.end();
+    while ((xP < xPEnd) && (yP < yPEnd)) {
+        *xP = *xP + *yP;
+        xP++;
+        yP++;
+    }
+    return true;
 }
 
 // in-place multiplication!!
@@ -1037,192 +972,190 @@ bool addVector(signalVector &x,
 //  }
 //}
 
-bool generateMidamble(int sps, int tsc)
-{
-  bool status = true;
-  float toa;
-  complex *data = NULL;
-  signalVector *autocorr = NULL, *midamble = NULL;
-  signalVector *midMidamble = NULL, *_midMidamble = NULL;
+bool generateMidamble(int sps, int tsc) {
+    bool status = true;
+    float toa;
+    std::complex<float> * data = nullptr;
+    signalVector * autocorr = nullptr;
+    signalVector * midamble = nullptr;
+    signalVector * midMidamble = nullptr;
+    signalVector * _midMidamble = nullptr;
 
-  if ((tsc < 0) || (tsc > 7))
-    return false;
-
-  delete gMidambles[tsc];
-
-  /* Use middle 16 bits of each TSC. Correlation sequence is not pulse shaped */
-  midMidamble = modulateBurst(gTrainingSequence[tsc].alias().segment(5,16), 0, sps, true);
-  if (!midMidamble)
-    return false;
-
-  /* Simulated receive sequence is pulse shaped */
-  midamble = modulateBurst(gTrainingSequence[tsc].alias(), 0, sps, false);
-  if (!midamble) {
-    status = false;
-    goto release;
-  }
-
-  // NOTE: Because ideal TSC 16-bit midamble is 66 symbols into burst,
-  //       the ideal TSC has an + 180 degree phase shift,
-  //       due to the pi/2 frequency shift, that 
-  //       needs to be accounted for.
-  //       26-midamble is 61 symbols into burst, has +90 degree phase shift.
-  scaleVector(*midMidamble, complex(-1.0, 0.0));
-  scaleVector(*midamble, complex(0.0, 1.0));
-
-  conjugateVector(*midMidamble);
-
-  /* For SSE alignment, reallocate the midamble sequence on 16-byte boundary */
-  data = (complex *) convolve_h_alloc(midMidamble->size());
-  _midMidamble = new signalVector(data, 0, midMidamble->size());
-  _midMidamble->setAligned(true);
-  memcpy(_midMidamble->begin(), midMidamble->begin(),
-	 midMidamble->size() * sizeof(complex));
-
-  autocorr = convolve(midamble, _midMidamble, NULL, NO_DELAY);
-  if (!autocorr) {
-    status = false;
-    goto release;
-  }
-
-  gMidambles[tsc] = new CorrelationSequence;
-  gMidambles[tsc]->buffer = data;
-  gMidambles[tsc]->sequence = _midMidamble;
-  gMidambles[tsc]->gain = peakDetect(*autocorr, &toa, NULL);
-
-  /* For 1 sps only
-   *     (Half of correlation length - 1) + midpoint of pulse shape + remainder
-   *     13.5 = (16 / 2 - 1) + 1.5 + (26 - 10) / 2
-   */
-  if (sps == 1)
-    gMidambles[tsc]->toa = toa - 13.5;
-  else
-    gMidambles[tsc]->toa = 0;
-
-release:
-  delete autocorr;
-  delete midamble;
-  delete midMidamble;
-
-  if (!status) {
-    delete _midMidamble;
-    free(data);
-    gMidambles[tsc] = NULL;
-  }
-
-  return status;
-}
-
-bool generateRACHSequence(int sps)
-{
-  bool status = true;
-  float toa;
-  complex *data = NULL;
-  signalVector *autocorr = NULL;
-  signalVector *seq0 = NULL, *seq1 = NULL, *_seq1 = NULL;
-
-  delete gRACHSequence;
-
-  seq0 = modulateBurst(gRACHSynchSequence, 0, sps, false);
-  if (!seq0)
-    return false;
-
-  seq1 = modulateBurst(gRACHSynchSequence.alias().segment(0, 40), 0, sps, true);
-  if (!seq1) {
-    status = false;
-    goto release;
-  }
-
-  conjugateVector(*seq1);
-
-  /* For SSE alignment, reallocate the midamble sequence on 16-byte boundary */
-  data = (complex *) convolve_h_alloc(seq1->size());
-  _seq1 = new signalVector(data, 0, seq1->size());
-  _seq1->setAligned(true);
-  memcpy(_seq1->begin(), seq1->begin(), seq1->size() * sizeof(complex));
-
-  autocorr = convolve(seq0, _seq1, autocorr, NO_DELAY);
-  if (!autocorr) {
-    status = false;
-    goto release;
-  }
-
-  gRACHSequence = new CorrelationSequence;
-  gRACHSequence->sequence = _seq1;
-  gRACHSequence->buffer = data;
-  gRACHSequence->gain = peakDetect(*autocorr, &toa, NULL);
-
-  /* For 1 sps only
-   *     (Half of correlation length - 1) + midpoint of pulse shaping filer
-   *     20.5 = (40 / 2 - 1) + 1.5
-   */
-  if (sps == 1)
-    gRACHSequence->toa = toa - 20.5;
-  else
-    gRACHSequence->toa = 0.0;
-
-release:
-  delete autocorr;
-  delete seq0;
-  delete seq1;
-
-  if (!status) {
-    delete _seq1;
-    free(data);
-    gRACHSequence = NULL;
-  }
-
-  return status;
-}
-
-static float computePeakRatio(signalVector *corr,
-                              int sps, float toa, complex amp)
-{
-  int num = 0;
-  complex *peak;
-  float rms, avg = 0.0;
-
-  peak = corr->begin() + (int) rint(toa);
-
-  /* Check for bogus results */
-  if ((toa < 0.0) || (toa > corr->size()))
-    return 0.0;
-
-  for (int i = 2 * sps; i <= 5 * sps; i++) {
-    if (peak - i >= corr->begin()) {
-      avg += (peak - i)->norm2();
-      num++;
+    if ((tsc < 0) || (tsc > 7)) {
+        return false;
     }
-    if (peak + i < corr->end()) {
-      avg += (peak + i)->norm2();
-      num++;
+
+    delete gMidambles[tsc];
+
+    /* Use middle 16 bits of each TSC. Correlation sequence is not pulse shaped */
+    midMidamble = modulateBurst(gTrainingSequence[tsc].alias().segment(5, 16), 0, sps, true);
+    if (!midMidamble) {
+        return false;
     }
-  }
 
-  if (num < 2)
-    return 0.0;
+    /* Simulated receive sequence is pulse shaped */
+    midamble = modulateBurst(gTrainingSequence[tsc].alias(), 0, sps, false);
+    if (!midamble) {
+        status = false;
+        goto release;
+    }
 
-  rms = sqrtf(avg / (float) num) + 0.00001;
+    // NOTE: Because ideal TSC 16-bit midamble is 66 symbols into burst,
+    //       the ideal TSC has an + 180 degree phase shift,
+    //       due to the pi/2 frequency shift, that
+    //       needs to be accounted for.
+    //       26-midamble is 61 symbols into burst, has +90 degree phase shift.
+    scaleVector(*midMidamble, std::complex<float>(-1.0, 0.0));
+    scaleVector(*midamble, std::complex<float>(0.0, 1.0));
 
-  return (amp.abs()) / rms;
+    conjugateVector(*midMidamble);
+
+    /* For SSE alignment, reallocate the midamble sequence on 16-byte boundary */
+    data = (std::complex<float> *) convolve_h_alloc(midMidamble->size());
+    _midMidamble = new signalVector(data, 0, midMidamble->size());
+    _midMidamble->setAligned(true);
+    memcpy(_midMidamble->begin(), midMidamble->begin(), midMidamble->size() * sizeof(std::complex<float>));
+
+    autocorr = convolve(midamble, _midMidamble, nullptr, NO_DELAY);
+    if (!autocorr) {
+        status = false;
+        goto release;
+    }
+
+    gMidambles[tsc] = new CorrelationSequence;
+    gMidambles[tsc]->buffer = data;
+    gMidambles[tsc]->sequence = _midMidamble;
+    gMidambles[tsc]->gain = peakDetect(*autocorr, &toa, nullptr);
+
+    /* For 1 sps only
+     *     (Half of correlation length - 1) + midpoint of pulse shape + remainder
+     *     13.5 = (16 / 2 - 1) + 1.5 + (26 - 10) / 2
+     */
+    if (sps == 1)
+        gMidambles[tsc]->toa = toa - 13.5;
+    else
+        gMidambles[tsc]->toa = 0;
+
+    release:
+    delete autocorr;
+    delete midamble;
+    delete midMidamble;
+
+    if (!status) {
+        delete _midMidamble;
+        free(data);
+        gMidambles[tsc] = nullptr;
+    }
+
+    return status;
 }
 
-bool energyDetect(signalVector &rxBurst,
-		  unsigned windowLength,
-		  float detectThreshold,
-                  float *avgPwr)
-{
+bool generateRACHSequence(int sps) {
+    bool status = true;
+    float toa;
+    std::complex<float> * data = nullptr;
+    signalVector * autocorr = nullptr;
+    signalVector * seq0 = nullptr, * seq1 = nullptr, * _seq1 = nullptr;
 
-  signalVector::const_iterator windowItr = rxBurst.begin(); //+rxBurst.size()/2 - 5*windowLength/2;
-  float energy = 0.0;
-  if (windowLength < 0) windowLength = 20;
-  if (windowLength > rxBurst.size()) windowLength = rxBurst.size();
-  for (unsigned i = 0; i < windowLength; i++) {
-    energy += windowItr->norm2();
-    windowItr+=4;
-  }
-  if (avgPwr) *avgPwr = energy/windowLength;
-  return (energy/windowLength > detectThreshold*detectThreshold);
+    delete gRACHSequence;
+
+    seq0 = modulateBurst(gRACHSynchSequence, 0, sps, false);
+    if (!seq0)
+        return false;
+
+    seq1 = modulateBurst(gRACHSynchSequence.alias().segment(0, 40), 0, sps, true);
+    if (!seq1) {
+        status = false;
+        goto release;
+    }
+
+    conjugateVector(*seq1);
+
+    /* For SSE alignment, reallocate the midamble sequence on 16-byte boundary */
+    data = (std::complex<float> *) convolve_h_alloc(seq1->size());
+    _seq1 = new signalVector(data, 0, seq1->size());
+    _seq1->setAligned(true);
+    memcpy(_seq1->begin(), seq1->begin(), seq1->size() * sizeof(std::complex<float>));
+
+    autocorr = convolve(seq0, _seq1, autocorr, NO_DELAY);
+    if (!autocorr) {
+        status = false;
+        goto release;
+    }
+
+    gRACHSequence = new CorrelationSequence;
+    gRACHSequence->sequence = _seq1;
+    gRACHSequence->buffer = data;
+    gRACHSequence->gain = peakDetect(*autocorr, &toa, nullptr);
+
+    /* For 1 sps only
+     *     (Half of correlation length - 1) + midpoint of pulse shaping filer
+     *     20.5 = (40 / 2 - 1) + 1.5
+     */
+    if (sps == 1)
+        gRACHSequence->toa = toa - 20.5;
+    else
+        gRACHSequence->toa = 0.0;
+
+    release:
+    delete autocorr;
+    delete seq0;
+    delete seq1;
+
+    if (!status) {
+        delete _seq1;
+        free(data);
+        gRACHSequence = nullptr;
+    }
+
+    return status;
+}
+
+static float computePeakRatio(signalVector * corr, int sps, float toa, std::complex<float> amp) {
+    int num = 0;
+    std::complex<float> * peak;
+    float rms, avg = 0.0;
+
+    peak = corr->begin() + (int) rint(toa);
+
+    /* Check for bogus results */
+    if ((toa < 0.0) || (toa > corr->size()))
+        return 0.0;
+
+    for (int i = 2 * sps; i <= 5 * sps; i++) {
+        if (peak - i >= corr->begin()) {
+            //avg += (peak - i)->norm2();
+            avg += std::norm(*(peak + i));
+            num++;
+        }
+        if (peak + i < corr->end()) {
+            //avg += (peak + i)->norm2();
+            avg += std::norm(*(peak + i));
+            num++;
+        }
+    }
+
+    if (num < 2)
+        return 0.0;
+
+    rms = sqrtf(avg / (float) num) + 0.00001;
+
+    //return (amp.abs()) / rms;
+    return std::abs(amp) / rms;
+}
+
+bool energyDetect(signalVector &rxBurst, unsigned windowLength, float detectThreshold, float * avgPwr) {
+    signalVector::const_iterator windowItr = rxBurst.begin(); //+rxBurst.size()/2 - 5*windowLength/2;
+    float energy = 0.0;
+    if (windowLength < 0) windowLength = 20;
+    if (windowLength > rxBurst.size()) windowLength = rxBurst.size();
+    for (unsigned i = 0; i < windowLength; i++) {
+        //energy += windowItr->norm2();
+        energy += std::norm(*windowItr);
+        windowItr += 4;
+    }
+    if (avgPwr) *avgPwr = energy / windowLength;
+    return (energy / windowLength > detectThreshold * detectThreshold);
 }
 
 /*
@@ -1233,53 +1166,51 @@ bool energyDetect(signalVector &rxBurst,
  * For higher oversampling values, we assume the energy detector is in place
  * and we run full interpolating peak detection.
  */
-static int detectBurst(signalVector &burst,
-                       signalVector &corr, CorrelationSequence *sync,
-                       float thresh, int sps, complex *amp, float *toa,
-                       int start, int len)
-{
-  /* Correlate */
-  if (!convolve(&burst, sync->sequence, &corr,
-                CUSTOM, start, len, sps, 0)) {
-    return -SIGERR_INTERNAL;
-  }
+static int detectBurst(signalVector &burst, signalVector &corr, CorrelationSequence * sync, float thresh,
+                       int sps, std::complex<float> * amp, float * toa, int start, int len) {
+    /* Correlate */
+    if (!convolve(&burst, sync->sequence, &corr, CUSTOM, start, len, sps, 0)) {
+        return -SIGERR_INTERNAL;
+    }
 
-  /* Peak detection - place restrictions at correlation edges */
-  *amp = fastPeakDetect(corr, toa);
+    /* Peak detection - place restrictions at correlation edges */
+    *amp = fastPeakDetect(corr, toa);
 
-  if ((*toa < 3 * sps) || (*toa > len - 3 * sps))
-    return 0;
+    if ((*toa < 3 * sps) || (*toa > len - 3 * sps)) {
+        return 0;
+    }
 
-  /* Peak -to-average ratio */
-  if (computePeakRatio(&corr, sps, *toa, *amp) < thresh)
-    return 0;
+    /* Peak -to-average ratio */
+    if (computePeakRatio(&corr, sps, *toa, *amp) < thresh) {
+        return 0;
+    }
 
-  /* Compute peak-to-average ratio. Reject if we don't have enough values */
-  *amp = peakDetect(corr, toa, NULL);
+    /* Compute peak-to-average ratio. Reject if we don't have enough values */
+    *amp = peakDetect(corr, toa, nullptr);
 
-  /* Normalize our channel gain */
-  *amp = *amp / sync->gain;
+    /* Normalize our channel gain */
+    *amp = *amp / sync->gain;
 
-  /* Compenate for residual rotation with dual Laurent pulse */
-  if (sps == 4)
-    *amp = *amp * complex(0.0, 1.0);
+    /* Compenate for residual rotation with dual Laurent pulse */
+    if (sps == 4) {
+        *amp = *amp * std::complex<float>(0.0, 1.0);
+    }
 
-  /* Compensate for residuate time lag */
-  *toa = *toa - sync->toa;
+    /* Compensate for residuate time lag */
+    *toa = *toa - sync->toa;
 
-  return 1;
+    return 1;
 }
 
-static int detectClipping(signalVector &burst, float thresh)
-{
-	for (size_t i = 0; i < burst.size(); i++) {
-		if (fabs(burst[i].real()) > thresh)
-			return 1;
-		if (fabs(burst[i].imag()) > thresh)
-			return 1;
-	}
+static int detectClipping(signalVector &burst, float thresh) {
+    for (size_t i = 0; i < burst.size(); i++) {
+        if (fabs(burst[i].real()) > thresh)
+            return 1;
+        if (fabs(burst[i].imag()) > thresh)
+            return 1;
+    }
 
-	return 0;
+    return 0;
 }
 
 /* 
@@ -1290,52 +1221,48 @@ static int detectClipping(signalVector &burst, float thresh)
  *   head: Search 4 symbols before target 
  *   tail: Search 10 symbols after target
  */
-int detectRACHBurst(signalVector &rxBurst,
-		    float thresh,
-		    int sps,
-		    complex *amp,
-		    float *toa)
-{
-  int rc, start, target, head, tail, len;
-  float _toa;
-  complex _amp;
-  signalVector corr;
-  CorrelationSequence *sync;
+int detectRACHBurst(signalVector &rxBurst, float thresh, int sps, std::complex<float> * amp, float * toa) {
+    int rc, start, target, head, tail, len;
+    float _toa;
+    std::complex<float> _amp;
+    signalVector corr;
+    CorrelationSequence * sync;
 
-  if ((sps != 1) && (sps != 4))
-    return -SIGERR_UNSUPPORTED;
+    if ((sps != 1) && (sps != 4)) {
+        return -SIGERR_UNSUPPORTED;
+    }
 
-  if (detectClipping(rxBurst, CLIP_THRESH))
-    return -SIGERR_CLIP;
+    if (detectClipping(rxBurst, CLIP_THRESH)) {
+        return -SIGERR_CLIP;
+    }
 
-  target = 8 + 40;
-  head = 4;
-  tail = 10;
+    target = 8 + 40;
+    head = 4;
+    tail = 10;
 
-  start = (target - head) * sps - 1;
-  len = (head + tail) * sps;
-  sync = gRACHSequence;
-  corr = signalVector(len);
+    start = (target - head) * sps - 1;
+    len = (head + tail) * sps;
+    sync = gRACHSequence;
+    corr = signalVector(len);
 
-  rc = detectBurst(rxBurst, corr, sync,
-                   thresh, sps, &_amp, &_toa, start, len);
-  if (rc < 0) {
-    return -1;
-  } else if (!rc) {
-    if (amp)
-      *amp = 0.0f;
+    rc = detectBurst(rxBurst, corr, sync, thresh, sps, &_amp, &_toa, start, len);
+    if (rc < 0) {
+        return -1;
+    } else if (!rc) {
+        if (amp)
+            *amp = 0.0f;
+        if (toa)
+            *toa = 0.0f;
+        return 0;
+    }
+
+    /* Subtract forward search bits from delay */
     if (toa)
-      *toa = 0.0f;
-    return 0;
-  }
+        *toa = _toa - head * sps;
+    if (amp)
+        *amp = _amp;
 
-  /* Subtract forward search bits from delay */
-  if (toa)
-    *toa = _toa - head * sps;
-  if (amp)
-    *amp = _amp;
-
-  return 1;
+    return 1;
 }
 
 /* 
@@ -1346,285 +1273,288 @@ int detectRACHBurst(signalVector &rxBurst,
  *   head: Search 4 symbols before target
  *   tail: Search 4 symbols + maximum expected delay
  */
-int analyzeTrafficBurst(signalVector &rxBurst, unsigned tsc, float thresh,
-                        int sps, complex *amp, float *toa, unsigned max_toa,
-                        bool chan_req, signalVector **chan, float *chan_offset)
-{
-  int rc, start, target, head, tail, len;
-  complex _amp;
-  float _toa;
-  signalVector corr;
-  CorrelationSequence *sync;
+int analyzeTrafficBurst(signalVector &rxBurst, unsigned tsc, float thresh, int sps, std::complex<float> * amp,
+                        float * toa, unsigned max_toa, bool chan_req, signalVector ** chan, float * chan_offset) {
+    int rc, start, target, head, tail, len;
+    std::complex<float> _amp;
+    float _toa;
+    signalVector corr;
+    CorrelationSequence * sync;
 
-  if ((tsc < 0) || (tsc > 7) || ((sps != 1) && (sps != 4)))
-    return -SIGERR_UNSUPPORTED;
+    if ((tsc < 0) || (tsc > 7) || ((sps != 1) && (sps != 4))) {
+        return -SIGERR_UNSUPPORTED;
+    }
 
-  target = 3 + 58 + 16 + 5;
-  head = 4;
-  tail = 4 + max_toa;
+    target = 3 + 58 + 16 + 5;
+    head = 4;
+    tail = 4 + max_toa;
 
-  start = (target - head) * sps - 1;
-  len = (head + tail) * sps;
-  sync = gMidambles[tsc];
-  corr = signalVector(len);
+    start = (target - head) * sps - 1;
+    len = (head + tail) * sps;
+    sync = gMidambles[tsc];
+    corr = signalVector(len);
 
-  rc = detectBurst(rxBurst, corr, sync,
-                   thresh, sps, &_amp, &_toa, start, len);
-  if (rc < 0) {
-    return -SIGERR_INTERNAL;
-  } else if (!rc) {
-    if (amp)
-      *amp = 0.0f;
+    rc = detectBurst(rxBurst, corr, sync, thresh, sps, &_amp, &_toa, start, len);
+    if (rc < 0) {
+        return -SIGERR_INTERNAL;
+    } else if (!rc) {
+        if (amp)
+            *amp = 0.0f;
+        if (toa)
+            *toa = 0.0f;
+        return 0;
+    }
+
+    /* Subtract forward search bits from delay */
+    _toa -= head * sps;
     if (toa)
-      *toa = 0.0f;
-    return 0;
-  }
+        *toa = _toa;
+    if (amp)
+        *amp = _amp;
 
-  /* Subtract forward search bits from delay */
-  _toa -= head * sps;
-  if (toa)
-    *toa = _toa;
-  if (amp)
-    *amp = _amp;
+    /* Equalization not currently supported */
+    if (chan_req) {
+        *chan = new signalVector(6 * sps);
 
-  /* Equalization not currently supported */
-  if (chan_req) {
-    *chan = new signalVector(6 * sps);
+        if (chan_offset) {
+            *chan_offset = 0.0;
+        }
+    }
 
-    if (chan_offset)
-      *chan_offset = 0.0;
-  }
-
-  return 1;
+    return 1;
 }
 
-signalVector *decimateVector(signalVector &wVector,
-			     int decimationFactor) 
-{
-  
-  if (decimationFactor <= 1) return NULL;
+signalVector * decimateVector(signalVector &wVector, int decimationFactor) {
+    if (decimationFactor <= 1) {
+        return nullptr;
+    }
 
-  signalVector *decVector = new signalVector(wVector.size()/decimationFactor);
-  decVector->isRealOnly(wVector.isRealOnly());
+    signalVector * decVector = new signalVector(wVector.size() / decimationFactor);
+    decVector->isRealOnly(wVector.isRealOnly());
 
-  signalVector::iterator vecItr = decVector->begin();
-  for (unsigned int i = 0; i < wVector.size();i+=decimationFactor) 
-    *vecItr++ = wVector[i];
+    signalVector::iterator vecItr = decVector->begin();
+    for (unsigned int i = 0; i < wVector.size(); i += decimationFactor)
+        *vecItr++ = wVector[i];
 
-  return decVector;
+    return decVector;
 }
 
 
-SoftVector *demodulateBurst(signalVector &rxBurst, int sps,
-                            complex channel, float TOA) 
-{
-  scaleVector(rxBurst,((complex) 1.0)/channel);
-  delayVector(rxBurst,-TOA);
+SoftVector * demodulateBurst(signalVector &rxBurst, int sps, std::complex<float> channel, float TOA) {
+    scaleVector(rxBurst, ((std::complex<float>) 1.0) / channel);
+    delayVector(rxBurst, -TOA);
 
-  signalVector *shapedBurst = &rxBurst;
+    signalVector * shapedBurst = &rxBurst;
 
-  // shift up by a quarter of a frequency
-  // ignore starting phase, since spec allows for discontinuous phase
-  GMSKReverseRotate(*shapedBurst, sps);
+    // shift up by a quarter of a frequency
+    // ignore starting phase, since spec allows for discontinuous phase
+    GMSKReverseRotate(*shapedBurst, sps);
 
-  // run through slicer
-  if (sps > 1) {
-     signalVector *decShapedBurst = decimateVector(*shapedBurst, sps);
-     shapedBurst = decShapedBurst;
-  }
+    // run through slicer
+    if (sps > 1) {
+        signalVector * decShapedBurst = decimateVector(*shapedBurst, sps);
+        shapedBurst = decShapedBurst;
+    }
 
-  vectorSlicer(shapedBurst);
+    vectorSlicer(shapedBurst);
 
-  SoftVector *burstBits = new SoftVector(shapedBurst->size());
+    SoftVector * burstBits = new SoftVector(shapedBurst->size());
 
-  SoftVector::iterator burstItr = burstBits->begin();
-  signalVector::iterator shapedItr = shapedBurst->begin();
-  for (; shapedItr < shapedBurst->end(); shapedItr++) 
-    *burstItr++ = shapedItr->real();
+    SoftVector::iterator burstItr = burstBits->begin();
+    signalVector::iterator shapedItr = shapedBurst->begin();
+    for (; shapedItr < shapedBurst->end(); shapedItr++) {
+        *burstItr++ = shapedItr->real();
+    }
 
-  if (sps > 1)
-    delete shapedBurst;
+    if (sps > 1) {
+        delete shapedBurst;
+    }
 
-  return burstBits;
+    return burstBits;
 
 }
-    
+
 // Assumes symbol-spaced sampling!!!
 // Based upon paper by Al-Dhahir and Cioffi
-bool designDFE(signalVector &channelResponse,
-	       float SNRestimate,
-	       int Nf,
-	       signalVector **feedForwardFilter,
-	       signalVector **feedbackFilter)
-{
-  
-  signalVector G0(Nf);
-  signalVector G1(Nf);
-  signalVector::iterator G0ptr = G0.begin();
-  signalVector::iterator G1ptr = G1.begin();
-  signalVector::iterator chanPtr = channelResponse.begin();
+bool designDFE(signalVector &channelResponse, float SNRestimate, int Nf, signalVector ** feedForwardFilter,
+               signalVector ** feedbackFilter) {
 
-  int nu = channelResponse.size()-1;
+    signalVector G0(Nf);
+    signalVector G1(Nf);
+    signalVector::iterator G0ptr = G0.begin();
+    signalVector::iterator G1ptr = G1.begin();
+    signalVector::iterator chanPtr = channelResponse.begin();
 
-  *G0ptr = 1.0/sqrtf(SNRestimate);
-  for(int j = 0; j <= nu; j++) {
-    *G1ptr = chanPtr->conj();
-    G1ptr++; chanPtr++;
-  }
+    int nu = channelResponse.size() - 1;
 
-  signalVector *L[Nf];
-  signalVector::iterator Lptr;
-  float d;
-  for(int i = 0; i < Nf; i++) {
-    d = G0.begin()->norm2() + G1.begin()->norm2();
-    L[i] = new signalVector(Nf+nu);
-    Lptr = L[i]->begin()+i;
-    G0ptr = G0.begin(); G1ptr = G1.begin();
-    while ((G0ptr < G0.end()) &&  (Lptr < L[i]->end())) {
-      *Lptr = (*G0ptr*(G0.begin()->conj()) + *G1ptr*(G1.begin()->conj()) )/d;
-      Lptr++;
-      G0ptr++;
-      G1ptr++;
+    *G0ptr = 1.0 / sqrtf(SNRestimate);
+    for (int j = 0; j <= nu; j++) {
+        //*G1ptr = chanPtr->conj();
+        *G1ptr = std::conj(*chanPtr);
+        G1ptr++;
+        chanPtr++;
     }
-    complex k = (*G1.begin())/(*G0.begin());
 
-    if (i != Nf-1) {
-      signalVector G0new = G1;
-      scaleVector(G0new,k.conj());
-      addVector(G0new,G0);
+    signalVector * L[Nf];
+    signalVector::iterator Lptr;
+    float d;
+    for (int i = 0; i < Nf; i++) {
+        //d = G0.begin()->norm2() + G1.begin()->norm2();
+        d = std::norm(*(G0.begin())) + std::norm(*(G1.begin()));
+        L[i] = new signalVector(Nf + nu);
+        Lptr = L[i]->begin() + i;
+        G0ptr = G0.begin();
+        G1ptr = G1.begin();
+        while ((G0ptr < G0.end()) && (Lptr < L[i]->end())) {
+            //*Lptr = (*G0ptr * (G0.begin()->conj()) + *G1ptr * (G1.begin()->conj())) / d;
+            *Lptr = (*G0ptr * (std::conj(*(G0.begin()))) + *G1ptr * (std::conj(*(G1.begin())))) / d;
+            Lptr++;
+            G0ptr++;
+            G1ptr++;
+        }
+        std::complex<float> k = (*G1.begin()) / (*G0.begin());
 
-      signalVector G1new = G0;
-      scaleVector(G1new,k*(-1.0));
-      addVector(G1new,G1);
-      delayVector(G1new,-1.0);
+        if (i != Nf - 1) {
+            signalVector G0new = G1;
+            //scaleVector(G0new, k.conj());
+            scaleVector(G0new, std::conj(k));
+            addVector(G0new, G0);
 
-      scaleVector(G0new,1.0/sqrtf(1.0+k.norm2()));
-      scaleVector(G1new,1.0/sqrtf(1.0+k.norm2()));
-      G0 = G0new;
-      G1 = G1new;
+            signalVector G1new = G0;
+            scaleVector(G1new, k * std::complex<float>(-1.0));
+            addVector(G1new, G1);
+            delayVector(G1new, -1.0);
+
+            //scaleVector(G0new, 1.0 / sqrtf(1.0 + k.norm2()));
+            //scaleVector(G1new, 1.0 / sqrtf(1.0 + k.norm2()));
+            scaleVector(G0new, 1.0 / sqrtf(1.0 + std::norm(k)));
+            scaleVector(G1new, 1.0 / sqrtf(1.0 + std::norm(k)));
+            G0 = G0new;
+            G1 = G1new;
+        }
     }
-  }
 
-  *feedbackFilter = new signalVector(nu);
-  L[Nf-1]->segmentCopyTo(**feedbackFilter,Nf,nu);
-  scaleVector(**feedbackFilter,(complex) -1.0);
-  conjugateVector(**feedbackFilter);
+    *feedbackFilter = new signalVector(nu);
+    L[Nf - 1]->segmentCopyTo(**feedbackFilter, Nf, nu);
+    scaleVector(**feedbackFilter, (std::complex<float>) -1.0);
+    conjugateVector(**feedbackFilter);
 
-  signalVector v(Nf);
-  signalVector::iterator vStart = v.begin();
-  signalVector::iterator vPtr;
-  *(vStart+Nf-1) = (complex) 1.0;
-  for(int k = Nf-2; k >= 0; k--) {
-    Lptr = L[k]->begin()+k+1;
-    vPtr = vStart + k+1;
-    complex v_k = 0.0;
-    for (int j = k+1; j < Nf; j++) {
-      v_k -= (*vPtr)*(*Lptr);
-      vPtr++; Lptr++;
+    signalVector v(Nf);
+    signalVector::iterator vStart = v.begin();
+    signalVector::iterator vPtr;
+    *(vStart + Nf - 1) = (std::complex<float>) 1.0;
+    for (int k = Nf - 2; k >= 0; k--) {
+        Lptr = L[k]->begin() + k + 1;
+        vPtr = vStart + k + 1;
+        std::complex<float> v_k = 0.0;
+        for (int j = k + 1; j < Nf; j++) {
+            v_k -= (*vPtr) * (*Lptr);
+            vPtr++;
+            Lptr++;
+        }
+        *(vStart + k) = v_k;
     }
-     *(vStart + k) = v_k;
-  }
 
-  *feedForwardFilter = new signalVector(Nf);
-  signalVector::iterator w = (*feedForwardFilter)->end();
-  for (int i = 0; i < Nf; i++) {
-    delete L[i];
-    complex w_i = 0.0;
-    int endPt = ( nu < (Nf-1-i) ) ? nu : (Nf-1-i);
-    vPtr = vStart+i;
-    chanPtr = channelResponse.begin();
-    for (int k = 0; k < endPt+1; k++) {
-      w_i += (*vPtr)*(chanPtr->conj());
-      vPtr++; chanPtr++;
+    *feedForwardFilter = new signalVector(Nf);
+    signalVector::iterator w = (*feedForwardFilter)->end();
+    for (int i = 0; i < Nf; i++) {
+        delete L[i];
+        std::complex<float> w_i = 0.0;
+        int endPt = (nu < (Nf - 1 - i)) ? nu : (Nf - 1 - i);
+        vPtr = vStart + i;
+        chanPtr = channelResponse.begin();
+        for (int k = 0; k < endPt + 1; k++) {
+            //w_i += (*vPtr) * (chanPtr->conj());
+            w_i += (*vPtr) * std::conj(*chanPtr);
+            vPtr++;
+            chanPtr++;
+        }
+        *--w = w_i / d;
     }
-    *--w = w_i/d;
-  }
 
+    return true;
 
-  return true;
-  
 }
 
 // Assumes symbol-rate sampling!!!!
-SoftVector *equalizeBurst(signalVector &rxBurst,
-		       float TOA,
-		       int sps,
-		       signalVector &w, // feedforward filter
-		       signalVector &b) // feedback filter
-{
-  signalVector *postForwardFull;
+// w -> feedforward filter
+// b -> feedback filter
+SoftVector * equalizeBurst(signalVector &rxBurst, float TOA, int sps, signalVector &w, signalVector &b) {
+    signalVector * postForwardFull;
 
-  if (!delayVector(rxBurst, -TOA))
-    return NULL;
-
-  postForwardFull = convolve(&rxBurst, &w, NULL,
-                             CUSTOM, 0, rxBurst.size() + w.size() - 1);
-  if (!postForwardFull)
-    return NULL;
-
-  signalVector* postForward = new signalVector(rxBurst.size());
-  postForwardFull->segmentCopyTo(*postForward,w.size()-1,rxBurst.size());
-  delete postForwardFull;
-
-  signalVector::iterator dPtr = postForward->begin();
-  signalVector::iterator dBackPtr;
-  signalVector::iterator rotPtr = GMSKRotationN->begin();
-  signalVector::iterator revRotPtr = GMSKReverseRotationN->begin();
-
-  signalVector *DFEoutput = new signalVector(postForward->size());
-  signalVector::iterator DFEItr = DFEoutput->begin();
-
-  // NOTE: can insert the midamble and/or use midamble to estimate BER
-  for (; dPtr < postForward->end(); dPtr++) {
-    dBackPtr = dPtr-1;
-    signalVector::iterator bPtr = b.begin();
-    while ( (bPtr < b.end()) && (dBackPtr >= postForward->begin()) ) {
-      *dPtr = *dPtr + (*bPtr)*(*dBackPtr);
-      bPtr++;
-      dBackPtr--;
+    if (!delayVector(rxBurst, -TOA)) {
+        return nullptr;
     }
-    *dPtr = *dPtr * (*revRotPtr);
-    *DFEItr = *dPtr;
-    // make decision on symbol
-    *dPtr = (dPtr->real() > 0.0) ? 1.0 : -1.0;
-    //*DFEItr = *dPtr;
-    *dPtr = *dPtr * (*rotPtr);
-    DFEItr++;
-    rotPtr++;
-    revRotPtr++;
-  }
 
-  vectorSlicer(DFEoutput);
+    postForwardFull = convolve(&rxBurst, &w, nullptr, CUSTOM, 0, rxBurst.size() + w.size() - 1);
+    if (!postForwardFull) {
+        return nullptr;
+    }
 
-  SoftVector *burstBits = new SoftVector(postForward->size());
-  SoftVector::iterator burstItr = burstBits->begin();
-  DFEItr = DFEoutput->begin();
-  for (; DFEItr < DFEoutput->end(); DFEItr++) 
-    *burstItr++ = DFEItr->real();
+    signalVector * postForward = new signalVector(rxBurst.size());
+    postForwardFull->segmentCopyTo(*postForward, w.size() - 1, rxBurst.size());
+    delete postForwardFull;
 
-  delete postForward;
+    signalVector::iterator dPtr = postForward->begin();
+    signalVector::iterator dBackPtr;
+    signalVector::iterator rotPtr = GMSKRotationN->begin();
+    signalVector::iterator revRotPtr = GMSKReverseRotationN->begin();
 
-  delete DFEoutput;
+    signalVector * DFEoutput = new signalVector(postForward->size());
+    signalVector::iterator DFEItr = DFEoutput->begin();
 
-  return burstBits;
+    // NOTE: can insert the midamble and/or use midamble to estimate BER
+    for (; dPtr < postForward->end(); dPtr++) {
+        dBackPtr = dPtr - 1;
+        signalVector::iterator bPtr = b.begin();
+        while ((bPtr < b.end()) && (dBackPtr >= postForward->begin())) {
+            *dPtr = *dPtr + (*bPtr) * (*dBackPtr);
+            bPtr++;
+            dBackPtr--;
+        }
+        *dPtr = *dPtr * (*revRotPtr);
+        *DFEItr = *dPtr;
+        // make decision on symbol
+        *dPtr = (dPtr->real() > 0.0) ? 1.0 : -1.0;
+        //*DFEItr = *dPtr;
+        *dPtr = *dPtr * (*rotPtr);
+        DFEItr++;
+        rotPtr++;
+        revRotPtr++;
+    }
+
+    vectorSlicer(DFEoutput);
+
+    SoftVector * burstBits = new SoftVector(postForward->size());
+    SoftVector::iterator burstItr = burstBits->begin();
+    DFEItr = DFEoutput->begin();
+    for (; DFEItr < DFEoutput->end(); DFEItr++) {
+        *burstItr++ = DFEItr->real();
+    }
+
+    delete postForward;
+    delete DFEoutput;
+
+    return burstBits;
 }
 
-bool sigProcLibSetup(int sps)
-{
-  if ((sps != 1) && (sps != 4))
-    return false;
+bool sigProcLibSetup(int sps) {
+    if ((sps != 1) && (sps != 4)) {
+        return false;
+    }
 
-  initTrigTables();
-  initGMSKRotationTables(sps);
+    initTrigTables();
+    initGMSKRotationTables(sps);
 
-  GSMPulse1 = generateGSMPulse(1, 2);
-  if (sps > 1)
-    GSMPulse = generateGSMPulse(sps, 2);
+    GSMPulse1 = generateGSMPulse(1, 2);
+    if (sps > 1) {
+        GSMPulse = generateGSMPulse(sps, 2);
+    }
 
-  if (!generateRACHSequence(1)) {
-    sigProcLibDestroy();
-    return false;
-  }
+    if (!generateRACHSequence(1)) {
+        sigProcLibDestroy();
+        return false;
+    }
 
-  return true;
+    return true;
 }

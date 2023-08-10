@@ -42,182 +42,184 @@
 
 /** The Transceiver class, responsible for physical layer of basestation */
 class Transceiver {
-  
+
 private:
 
-  GSM::Time mTransmitLatency;     ///< latency between basestation clock and transmit deadline clock
-  GSM::Time mLatencyUpdateTime;   ///< last time latency was updated
+    GSM::Time mTransmitLatency;     ///< latency between basestation clock and transmit deadline clock
+    GSM::Time mLatencyUpdateTime;   ///< last time latency was updated
 
-  UDPSocket mDataSocket;	  ///< socket for writing to/reading from GSM core
-  UDPSocket mControlSocket;	  ///< socket for writing/reading control commands from GSM core
-  UDPSocket mClockSocket;	  ///< socket for writing clock updates to GSM core
+    UDPSocket mDataSocket;      ///< socket for writing to/reading from GSM core
+    UDPSocket mControlSocket;      ///< socket for writing/reading control commands from GSM core
+    UDPSocket mClockSocket;      ///< socket for writing clock updates to GSM core
 
-  VectorQueue  mTransmitPriorityQueue;   ///< priority queue of transmit bursts received from GSM core
-  VectorFIFO*  mTransmitFIFO;     ///< radioInterface FIFO of transmit bursts 
-  VectorFIFO*  mReceiveFIFO;      ///< radioInterface FIFO of receive bursts 
+    VectorQueue mTransmitPriorityQueue;   ///< priority queue of transmit bursts received from GSM core
+    VectorFIFO * mTransmitFIFO;     ///< radioInterface FIFO of transmit bursts
+    VectorFIFO * mReceiveFIFO;      ///< radioInterface FIFO of receive bursts
 
-  Thread *mRxServiceLoopThread;   ///< thread to pull bursts into receive FIFO
-  Thread *mTxServiceLoopThread;   ///< thread to push bursts into transmit FIFO
-  Thread *mControlServiceLoopThread;       ///< thread to process control messages from GSM core
-  Thread *mTransmitPriorityQueueServiceLoopThread;///< thread to process transmit bursts from GSM core
+    Thread * mRxServiceLoopThread;   ///< thread to pull bursts into receive FIFO
+    Thread * mTxServiceLoopThread;   ///< thread to push bursts into transmit FIFO
+    Thread * mControlServiceLoopThread;       ///< thread to process control messages from GSM core
+    Thread * mTransmitPriorityQueueServiceLoopThread;///< thread to process transmit bursts from GSM core
 
-  GSM::Time mTransmitDeadlineClock;       ///< deadline for pushing bursts into transmit FIFO 
-  GSM::Time mLastClockUpdateTime;         ///< last time clock update was sent up to core
+    GSM::Time mTransmitDeadlineClock;       ///< deadline for pushing bursts into transmit FIFO
+    GSM::Time mLastClockUpdateTime;         ///< last time clock update was sent up to core
 
-  RadioInterface *mRadioInterface;	  ///< associated radioInterface object
-  double txFullScale;                     ///< full scale input to radio
-  double rxFullScale;                     ///< full scale output to radio
+    RadioInterface * mRadioInterface;      ///< associated radioInterface object
+    double txFullScale;                     ///< full scale input to radio
+    double rxFullScale;                     ///< full scale output to radio
 
-  /** Codes for burst types of received bursts*/
-  typedef enum {
-    OFF,               ///< timeslot is off
-    TSC,	       ///< timeslot should contain a normal burst
-    RACH,	       ///< timeslot should contain an access burst
-    IDLE	       ///< timeslot is an idle (or dummy) burst
-  } CorrType;
+    /** Codes for burst types of received bursts*/
+    typedef enum {
+        OFF,               ///< timeslot is off
+        TSC,           ///< timeslot should contain a normal burst
+        RACH,           ///< timeslot should contain an access burst
+        IDLE           ///< timeslot is an idle (or dummy) burst
+    } CorrType;
 
 
-  /** Codes for channel combinations */
-  typedef enum {
-    FILL,               ///< Channel is transmitted, but unused
-    I,                  ///< TCH/FS
-    II,                 ///< TCH/HS, idle every other slot
-    III,                ///< TCH/HS
-    IV,                 ///< FCCH+SCH+CCCH+BCCH, uplink RACH
-    V,                  ///< FCCH+SCH+CCCH+BCCH+SDCCH/4+SACCH/4, uplink RACH+SDCCH/4
-    VI,                 ///< CCCH+BCCH, uplink RACH
-    VII,                ///< SDCCH/8 + SACCH/8
-    NONE,               ///< Channel is inactive, default
-    LOOPBACK,            ///< similar go VII, used in loopback testing
-	IGPRS				///< GPRS channel, like I but static filler frames.
-  } ChannelCombination;
+    /** Codes for channel combinations */
+    typedef enum {
+        FILL,               ///< Channel is transmitted, but unused
+        I,                  ///< TCH/FS
+        II,                 ///< TCH/HS, idle every other slot
+        III,                ///< TCH/HS
+        IV,                 ///< FCCH+SCH+CCCH+BCCH, uplink RACH
+        V,                  ///< FCCH+SCH+CCCH+BCCH+SDCCH/4+SACCH/4, uplink RACH+SDCCH/4
+        VI,                 ///< CCCH+BCCH, uplink RACH
+        VII,                ///< SDCCH/8 + SACCH/8
+        NONE,               ///< Channel is inactive, default
+        LOOPBACK,            ///< similar go VII, used in loopback testing
+        IGPRS                ///< GPRS channel, like I but static filler frames.
+    } ChannelCombination;
 
-  float mNoiseLev;      ///< Average noise level
-  noiseVector mNoises;  ///< Vector holding running noise measurements
+    float mNoiseLev;      ///< Average noise level
+    noiseVector mNoises;  ///< Vector holding running noise measurements
 
-  /** unmodulate a modulated burst */
+    /** unmodulate a modulated burst */
 #ifdef TRANSMIT_LOGGING
-  void unModulateVector(signalVector wVector); 
+    void unModulateVector(signalVector wVector);
 #endif
 
-  void setFiller(radioVector *rv, bool allocate, bool force);
+    void setFiller(radioVector * rv, bool allocate, bool force);
 
-  /** modulate and add a burst to the transmit queue */
-  radioVector *fixRadioVector(BitVector &burst, int RSSI, GSM::Time &wTime);
+    /** modulate and add a burst to the transmit queue */
+    radioVector * fixRadioVector(BitVector &burst, int RSSI, GSM::Time &wTime);
 
-  /** Push modulated burst into transmit FIFO corresponding to a particular timestamp */
-  void pushRadioVector(GSM::Time &nowTime);
+    /** Push modulated burst into transmit FIFO corresponding to a particular timestamp */
+    void pushRadioVector(GSM::Time &nowTime);
 
-  /** Pull and demodulate a burst from the receive FIFO */ 
-  SoftVector *pullRadioVector(GSM::Time &wTime,
-			   int &RSSI,
-			   int &timingOffset);
-   
-  /** Set modulus for specific timeslot */
-  void setModulus(int timeslot);
+    /** Pull and demodulate a burst from the receive FIFO */
+    SoftVector * pullRadioVector(GSM::Time &wTime,
+                                 int &RSSI,
+                                 int &timingOffset);
 
-  /** return the expected burst type for the specified timestamp */
-  CorrType expectedCorrType(GSM::Time currTime);
+    /** Set modulus for specific timeslot */
+    void setModulus(int timeslot);
 
-  /** send messages over the clock socket */
-  void writeClockInterface(void);
+    /** return the expected burst type for the specified timestamp */
+    CorrType expectedCorrType(GSM::Time currTime);
 
-  int mSPSTx;                          ///< number of samples per Tx symbol
-  int mSPSRx;                          ///< number of samples per Rx symbol
+    /** send messages over the clock socket */
+    void writeClockInterface(void);
 
-  bool mOn;			       ///< flag to indicate that transceiver is powered on
-  ChannelCombination mChanType[8];     ///< channel types for all timeslots
-  double mTxFreq;                      ///< the transmit frequency
-  double mRxFreq;                      ///< the receive frequency
-  int mPower;                          ///< the transmit power in dB
-  unsigned mTSC;                       ///< the midamble sequence code
-  int fillerModulus[8];                ///< modulus values of all timeslots, in frames
-  signalVector *fillerTable[102][8];   ///< table of modulated filler waveforms for all timeslots
-  bool mHandoverActive[8];
-  unsigned mMaxExpectedDelay;            ///< maximum expected time-of-arrival offset in GSM symbols
+    int mSPSTx;                          ///< number of samples per Tx symbol
+    int mSPSRx;                          ///< number of samples per Rx symbol
 
-  GSM::Time    channelEstimateTime[8]; ///< last timestamp of each timeslot's channel estimate
-  signalVector *channelResponse[8];    ///< most recent channel estimate of all timeslots
-  float        SNRestimate[8];         ///< most recent SNR estimate of all timeslots
-  signalVector *DFEForward[8];         ///< most recent DFE feedforward filter of all timeslots
-  signalVector *DFEFeedback[8];        ///< most recent DFE feedback filter of all timeslots
-  float        chanRespOffset[8];      ///< most recent timing offset, e.g. TOA, of all timeslots
-  complex      chanRespAmplitude[8];   ///< most recent channel amplitude of all timeslots
+    bool mOn;                   ///< flag to indicate that transceiver is powered on
+    ChannelCombination mChanType[8];     ///< channel types for all timeslots
+    double mTxFreq;                      ///< the transmit frequency
+    double mRxFreq;                      ///< the receive frequency
+    int mPower;                          ///< the transmit power in dB
+    unsigned mTSC;                       ///< the midamble sequence code
+    int fillerModulus[8];                ///< modulus values of all timeslots, in frames
+    signalVector * fillerTable[102][8];   ///< table of modulated filler waveforms for all timeslots
+    bool mHandoverActive[8];
+    unsigned mMaxExpectedDelay;            ///< maximum expected time-of-arrival offset in GSM symbols
+
+    GSM::Time channelEstimateTime[8]; ///< last timestamp of each timeslot's channel estimate
+    signalVector * channelResponse[8];    ///< most recent channel estimate of all timeslots
+    float SNRestimate[8];         ///< most recent SNR estimate of all timeslots
+    signalVector * DFEForward[8];         ///< most recent DFE feedforward filter of all timeslots
+    signalVector * DFEFeedback[8];        ///< most recent DFE feedback filter of all timeslots
+    float chanRespOffset[8];      ///< most recent timing offset, e.g. TOA, of all timeslots
+    std::complex<float> chanRespAmplitude[8];   ///< most recent channel amplitude of all timeslots
 
 public:
 
-  /** Transceiver constructor 
-      @param wBasePort base port number of UDP sockets
-      @param TRXAddress IP address of the TRX manager, as a string
-      @param wSPS number of samples per GSM symbol
-      @param wTransmitLatency initial setting of transmit latency
-      @param radioInterface associated radioInterface object
-  */
-  Transceiver(int wBasePort,
-	      const char *TRXAddress,
-	      int wSPS,
-	      GSM::Time wTransmitLatency,
-	      RadioInterface *wRadioInterface);
-   
-  /** Destructor */
-  ~Transceiver();
+    /** Transceiver constructor
+        @param wBasePort base port number of UDP sockets
+        @param TRXAddress IP address of the TRX manager, as a string
+        @param wSPS number of samples per GSM symbol
+        @param wTransmitLatency initial setting of transmit latency
+        @param radioInterface associated radioInterface object
+    */
+    Transceiver(int wBasePort,
+                const char * TRXAddress,
+                int wSPS,
+                GSM::Time wTransmitLatency,
+                RadioInterface * wRadioInterface);
 
-  /** start the Transceiver */
-  void start();
-  bool init();
+    /** Destructor */
+    ~Transceiver();
 
-  /** attach the radioInterface receive FIFO */
-  void receiveFIFO(VectorFIFO *wFIFO) { mReceiveFIFO = wFIFO;}
+    /** start the Transceiver */
+    void start();
 
-  /** attach the radioInterface transmit FIFO */
-  void transmitFIFO(VectorFIFO *wFIFO) { mTransmitFIFO = wFIFO;}
+    bool init();
 
-  // This magic flag is ORed with the TN TimeSlot in vectors passed to the transceiver
-  // to indicate the radio block is a filler frame instead of a radio frame.
-  // Must be higher than any possible TN.
-  enum TransceiverFlags {
-  	SET_FILLER_FRAME = 0x10
-  };
+    /** attach the radioInterface receive FIFO */
+    void receiveFIFO(VectorFIFO * wFIFO) { mReceiveFIFO = wFIFO; }
+
+    /** attach the radioInterface transmit FIFO */
+    void transmitFIFO(VectorFIFO * wFIFO) { mTransmitFIFO = wFIFO; }
+
+    // This magic flag is ORed with the TN TimeSlot in vectors passed to the transceiver
+    // to indicate the radio block is a filler frame instead of a radio frame.
+    // Must be higher than any possible TN.
+    enum TransceiverFlags {
+        SET_FILLER_FRAME = 0x10
+    };
 
 protected:
 
-  /** drive reception and demodulation of GSM bursts */ 
-  void driveReceiveFIFO();
+    /** drive reception and demodulation of GSM bursts */
+    void driveReceiveFIFO();
 
-  /** drive transmission of GSM bursts */
-  void driveTransmitFIFO();
+    /** drive transmission of GSM bursts */
+    void driveTransmitFIFO();
 
-  /** drive handling of control messages from GSM core */
-  void driveControl();
+    /** drive handling of control messages from GSM core */
+    void driveControl();
 
-  /**
-    drive modulation and sorting of GSM bursts from GSM core
-    @return true if a burst was transferred successfully
-  */
-  bool driveTransmitPriorityQueue();
+    /**
+      drive modulation and sorting of GSM bursts from GSM core
+      @return true if a burst was transferred successfully
+    */
+    bool driveTransmitPriorityQueue();
 
-  friend void *RxServiceLoopAdapter(Transceiver *);
+    friend void * RxServiceLoopAdapter(Transceiver *);
 
-  friend void *TxServiceLoopAdapter(Transceiver *);
+    friend void * TxServiceLoopAdapter(Transceiver *);
 
-  friend void *ControlServiceLoopAdapter(Transceiver *);
+    friend void * ControlServiceLoopAdapter(Transceiver *);
 
-  friend void *TransmitPriorityQueueServiceLoopAdapter(Transceiver *);
+    friend void * TransmitPriorityQueueServiceLoopAdapter(Transceiver *);
 
-  void reset();
+    void reset();
 
-  /** set priority on current thread */
-  void setPriority() { mRadioInterface->setPriority(); }
+    /** set priority on current thread */
+    void setPriority() { mRadioInterface->setPriority(); }
 
 };
 
 /** Main drive threads */
-void *RxServiceLoopAdapter(Transceiver *);
-void *TxServiceLoopAdapter(Transceiver *);
+void * RxServiceLoopAdapter(Transceiver *);
+
+void * TxServiceLoopAdapter(Transceiver *);
 
 /** control message handler thread loop */
-void *ControlServiceLoopAdapter(Transceiver *);
+void * ControlServiceLoopAdapter(Transceiver *);
 
 /** transmit queueing thread loop */
-void *TransmitPriorityQueueServiceLoopAdapter(Transceiver *);
+void * TransmitPriorityQueueServiceLoopAdapter(Transceiver *);
 
