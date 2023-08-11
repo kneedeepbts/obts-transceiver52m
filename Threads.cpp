@@ -1,51 +1,81 @@
-/*
-* Copyright 2008, 2014 Free Software Foundation, Inc.
-* Copyright 2014 Range Networks, Inc.
-*
-*
-* This software is distributed under the terms of the GNU Affero Public License.
-* See the COPYING file in the main directory for details.
-*
-* This use of this software may be subject to additional restrictions.
-* See the LEGAL file in the main directory for details.
 
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Affero General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
+#include <cerrno>
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU Affero General Public License for more details.
-
-	You should have received a copy of the GNU Affero General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
-
-
-
-
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+#include "spdlog/spdlog.h"
 
 #include "Threads.h"
 #include "Timeval.h"
-#include "Logger.h"
-#include <errno.h>
+//#include "Logger.h"
+
+
+// FIXME: Moving from utils.cpp to help break dependencies
+#include <execinfo.h>
+static std::string backtrace_failed = "backtrace failed";
+std::string rn_backtrace2()
+{
+    void *buffer[30];
+    int nptrs = backtrace(buffer,30);
+    if (nptrs <= 0) { return backtrace_failed; }
+    char **strings = backtrace_symbols(buffer,nptrs);
+    if (strings == NULL) { return backtrace_failed; }
+    std::string result;
+    try {
+        result = "backtrace:";
+        for (int j = 0; j < nptrs; j++) {
+            result = result + " " + strings[j];
+        }
+    } catch(...) {
+        return backtrace_failed;
+    }
+    free(strings);
+    return result;
+}
+
+std::string format(const char *fmt, ...) {
+    va_list ap;
+    char buf[200];
+    va_start(ap, fmt);
+    int n = vsnprintf(buf, 199, fmt, ap);
+    va_end(ap);
+    std::string result;
+    if (n <= 199) {
+        result = std::string(buf);
+    } else {
+        if (n > 5000) {
+            SPDLOG_ERROR("oversized string in format");
+            n = 5000;
+        }
+        // We could use vasprintf but we already computed the length...
+        // We are not using alloca because it might overflow the small stacks used for our threads.
+        char * buffer = (char *) malloc(n + 2);    // add 1 extra superstitiously.
+        va_start(ap, fmt);
+        vsnprintf(buffer, n + 1, fmt, ap);
+        va_end(ap);
+        //if (n >= (2000-4)) { strcpy(&buf[(2000-4)],"..."); }
+        result = std::string(buffer);
+        free(buffer);
+    }
+    return result;
+}
+
+
+
+
 
 
 using namespace std;
 
-int gMutexLogLevel = LOG_INFO;	// The mutexes cannot call gConfig or gGetLoggingLevel so we have to get the log level indirectly.
+//int gMutexLogLevel = LOG_INFO;	// The mutexes cannot call gConfig or gGetLoggingLevel so we have to get the log level indirectly.
 
 #if !defined(gettid)
 # define gettid() syscall(SYS_gettid)
 #endif // !defined(gettid)
 
-#define LOCKLOG(level,fmt,...) \
-	if (gMutexLogLevel >= LOG_##level) syslog(LOG_##level,"%lu %s %s:%u:%s:lockid=%p " fmt,gettid(),Utils::timestr().c_str(),__FILE__,__LINE__,__FUNCTION__,this,##__VA_ARGS__);
-	//if (gMutexLogLevel >= LOG_##level) syslog(LOG_##level,"%lu %s %s:%u:%s:lockid=%p " fmt,(unsigned long)pthread_self(),Utils::timestr().c_str(),__FILE__,__LINE__,__FUNCTION__,this,##__VA_ARGS__);
-	//printf("%u %s %s:%u:%s:lockid=%u " fmt "\n",(unsigned)pthread_self(),Utils::timestr().c_str(),__FILE__,__LINE__,__FUNCTION__,(unsigned)this,##__VA_ARGS__);
+//#define LOCKLOG(level,fmt,...) \
+//	if (gMutexLogLevel >= LOG_##level) syslog(LOG_##level,"%lu %s %s:%u:%s:lockid=%p " fmt,gettid(),Utils::timestr().c_str(),__FILE__,__LINE__,__FUNCTION__,this,##__VA_ARGS__);
+//	//if (gMutexLogLevel >= LOG_##level) syslog(LOG_##level,"%lu %s %s:%u:%s:lockid=%p " fmt,(unsigned long)pthread_self(),Utils::timestr().c_str(),__FILE__,__LINE__,__FUNCTION__,this,##__VA_ARGS__);
+//	//printf("%u %s %s:%u:%s:lockid=%u " fmt "\n",(unsigned)pthread_self(),Utils::timestr().c_str(),__FILE__,__LINE__,__FUNCTION__,(unsigned)this,##__VA_ARGS__);
 
 
 
@@ -160,12 +190,14 @@ void Mutex::lock(const char *file, unsigned line)
 {
 	// (pat 10-25-13) Deadlock reporting is now the default behavior so we can detect and report deadlocks at customer sites.
 	if (file) {
-		LOCKLOG(DEBUG,"start at %s %u",file,line);
+		//LOCKLOG(DEBUG,"start at %s %u",file,line);
+        SPDLOG_DEBUG("start at {} {}", file, line);
 		// If we wait more than a second, print an error message.
 		if (!timedlock(1000)) {
-			string backtrace = rn_backtrace();
-			LOCKLOG(ERR, "Blocked more than one second at %s %u by %s %s",file,line,mutext().c_str(),backtrace.c_str());
-			printf("WARNING: %s Blocked more than one second at %s %u by %s %s\n",timestr(4).c_str(),file,line,mutext().c_str(),backtrace.c_str());
+			string backtrace = rn_backtrace2();
+			//LOCKLOG(ERR, "Blocked more than one second at %s %u by %s %s",file,line,mutext().c_str(),backtrace.c_str());
+            SPDLOG_ERROR("Blocked more than one second at {} {} by {} {}", file, line, mutext().c_str(), backtrace.c_str());
+			//printf("WARNING: %s Blocked more than one second at %s %u by %s %s\n",timestr(4).c_str(),file,line,mutext().c_str(),backtrace.c_str());
 			_lock();					// If timedlock failed we are probably now entering deadlock.
 		}
 	} else {
@@ -176,13 +208,19 @@ void Mutex::lock(const char *file, unsigned line)
 		mLockerFile[mLockCnt] = file; mLockerLine[mLockCnt] = line;		// Now our thread has it locked from here.
 	}
 	mLockCnt++;
-	if (file) { LOCKLOG(DEBUG,"lock by %s",mutext().c_str()); }
+	if (file) {
+        //LOCKLOG(DEBUG,"lock by %s",mutext().c_str());
+        SPDLOG_DEBUG("lock by {}", mutext().c_str());
+    }
 	//else { LOCKLOG(DEBUG,"lock no file"); }
 }
 
 void Mutex::unlock()
 {
-	if (lockerFile()) { LOCKLOG(DEBUG,"unlock at %s",mutext().c_str()); }
+	if (lockerFile()) {
+        //LOCKLOG(DEBUG,"unlock at %s",mutext().c_str());
+        SPDLOG_DEBUG("unlock at {}", mutext().c_str());
+    }
 	//else { LOCKLOG(DEBUG,"unlock unchecked"); }
 	mLockCnt--;
 	pthread_mutex_unlock(&mMutex);
@@ -260,7 +298,8 @@ void ScopedLockMultiple::_lockAll() {
 		if (_trylock(0) && _trylock(1)) return;
 		_unlock(0);
 		_unlock(2);	
-		LOCKLOG(DEBUG,"Multiple lock attempt %d",n);	// Seeing this message is a hint we are having contention issues.
+		//LOCKLOG(DEBUG,"Multiple lock attempt %d",n);	// Seeing this message is a hint we are having contention issues.
+        SPDLOG_DEBUG("Multiple lock attempt {}", n);
 	}
 }
 
@@ -306,7 +345,9 @@ void Thread::start(void *(*task)(void*), void *arg)
         p->arg = arg;
 	res = pthread_create(&mThread, &mAttrib, &thread_main, p);
 	// (pat) Note: the error is returned and is not placed in errno.
-	if (res) { LOG(ALERT) << "pthread_create failed, error:" <<strerror(res); }
+	if (res) {
+        SPDLOG_ERROR("pthread_create failed, error: {}", strerror(res));
+    }
 	assert(!res);
 }
 

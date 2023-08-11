@@ -28,8 +28,8 @@
 #define BITVECTORS_H
 
 #include "Vector.h"
-#include <stdint.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
 
 
 class BitVector;

@@ -15,99 +15,14 @@ add_executable(obts_transceiver52m
         Transceiver.cpp
         Resampler.cpp
         radioInterfaceResamp.cpp
-        Logger.cpp
-        Utils.cpp
         Threads.cpp
         Timeval.cpp
-        Configuration.cpp
-        sqlite3util.cpp
         Sockets.cpp
-        GSMCommon.cpp
-        GSMTransfer.cpp
-        GSM503Tables.cpp
-        GSML3Message.cpp
         BitVector.cpp
-        ByteVector.cpp
-        ControlTransfer.cpp
-        Globals.cpp
-        L3Enums.cpp
-        MsgBase.cpp
-        LLC.cpp
-        Ggsn.cpp
-        miniggsn.cpp
-        GPRSL3Messages.cpp
-        GSMConfig.cpp
-        GSML3CommonElements.cpp
-        GSML3GPRSElements.cpp
-        GSML3CCElements.cpp
-        GSML3CCMessages.cpp
-        GSML3MMElements.cpp
-        GSML3MMMessages.cpp
-        GSML3RRElements.cpp
-        GSML3RRMessages.cpp
-        GSML3SSMessages.cpp
-        SMSMessages.cpp
-        SMSTransfer.cpp
-        GSMRadioResource.cpp
-        PowerManager.cpp
-        TRXManager.cpp
-        GSMLogicalChannel.cpp
-        GSMCCCH.cpp
-        GSML1FEC.cpp
-        GSML2LAPDm.cpp
-        GSMChannelHistory.cpp
-        GSMTDMA.cpp
-        ViterbiR204.cpp
-        AmrCoder.cpp
-        A51.cpp
-        GSM610Tables.cpp
-        NeighborTable.cpp
-        L3LogicalChannel.cpp
-        L3TermCause.cpp
-        PagingEntry.cpp
-        L3TranEntry.cpp
-        Reporting.cpp
-        MAC.cpp
-        L3StateMachine.cpp
-        L3MobilityManagement.cpp
-        L3Utils.cpp
-        TMSITable.cpp
-        TBF.cpp
-        MSInfo.cpp
-        L3SupServ.cpp
-        PhysicalStatus.cpp
-        GSMSMSCBL3Messages.cpp
-        L3Handover.cpp
-        GSMTAPDump.cpp
-        Peering.cpp
-        FEC.cpp
-        RLCEngine.cpp
-        RLCMessages.cpp
-        L3MMLayer.cpp
-        SIPDialog.cpp
-        SIPTransaction.cpp
-        L3CallControl.cpp
-        RRLPServer.cpp
-        L3SMSControl.cpp
-        BSSG.cpp
-        BSSGMessages.cpp
-        SIP2Interface.cpp
-        Sgsn.cpp
-        iputils.cpp
         UHDDevice.cpp
-        RLC.cpp
-        SIPMessage.cpp
-        SIPParse.cpp
-        SIPRtp.cpp
-        SIPBase.cpp
-        SIPUtility.cpp
-        DCCHDispatch.cpp
         LinkedLists.cpp
-        CBS.cpp
         smplbuf.cpp
-        smplbuf.h
         gsmtime.cpp
-        gsmtime.h
 )
 
-target_link_libraries(obts_transceiver52m pthread sqlite3 rt ortp uhd)
+target_link_libraries(obts_transceiver52m pthread rt ortp uhd)

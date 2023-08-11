@@ -9,24 +9,22 @@
 #include "spdlog/sinks/basic_file_sink.h"
 //#include "cpptoml.h"
 
-
+#include "radioDevice.h"
+#include "Transceiver.h"
 
 // FIXME: Work through these and figure out which are actually needed.
-#include "GSMCommon.h"
-#include "Reporting.h"
-#include "PhysicalStatus.h"
-#include "GSMConfig.h"
-#include "Peering.h"
-#include "NeighborTable.h"
+//#include "GSMCommon.h"
 
-#include "Transceiver.h"
-#include "radioDevice.h"
-#include "DummyLoad.h"
+//#include "Reporting.h"
 
+//#include "PhysicalStatus.h"
 
+//#include "GSMConfig.h"
 
+//#include "Peering.h"
 
-//#define CONFIGDB            "/etc/OpenBTS/OpenBTS.db"
+//#include "NeighborTable.h"
+
 
 
 
@@ -37,12 +35,12 @@
 
 // FIXME: Adding this here to make a bunch of dumb externs happy.
 //ReportingTable gReports(gConfig.getStr("Control.Reporting.StatsTable").c_str());
-ReportingTable gReports("/var/log/OpenBTSStats.db");
+//ReportingTable gReports("/var/log/OpenBTSStats.db");
 // Physical status reporting
-GSM::PhysicalStatus gPhysStatus;
+//GSM::PhysicalStatus gPhysStatus;
 // Configure the BTS object based on the config file.
 // So don't create this until AFTER loading the config file.
-GSM::GSMConfig gBTS;
+//GSM::GSMConfig gBTS;
 // Note to all from pat:
 // It is inadvisable to statically initialize any non-trivial entity here because
 // the underlying dependencies may not yet have undergone their static initialization.
@@ -52,11 +50,11 @@ GSM::GSMConfig gBTS;
 // Our interface to the software-defined radio.
 // FIXME: Bypassing the dumb config system...
 //TransceiverManager gTRX(gConfig.getNum("GSM.Radio.ARFCNs"), gConfig.getStr("TRX.IP").c_str(), gConfig.getNum("TRX.Port"));
-TransceiverManager gTRX(1, "127.0.0.1", 5700);
+//TransceiverManager gTRX(1, "127.0.0.1", 5700);
 /** The global peering interface. */
-Peering::PeerInterface gPeerInterface;
+//Peering::PeerInterface gPeerInterface;
 /** The global neighbor table. */
-Peering::NeighborTable gNeighborTable;
+//Peering::NeighborTable gNeighborTable;
 
 // FIXME: This "shutdown" method can stand to be cleaned up, but that's a small problem for later.
 volatile bool gbShutdown = false;

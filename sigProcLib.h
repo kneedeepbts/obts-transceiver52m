@@ -7,8 +7,6 @@
 #include "BitVector.h"
 //#include "Complex.h"
 
-//#include "GSMTransfer.h"
-
 
 //using namespace GSM;
 

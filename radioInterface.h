@@ -1,13 +1,8 @@
 #ifndef OBTS_TRANSCEIVER52M_RADIOINTERFACE_H
 #define OBTS_TRANSCEIVER52M_RADIOINTERFACE_H
 
-
-
-//#include "GSMCommon.h"
 #include "gsmtime.h"
-
 #include "LinkedLists.h"
-
 #include "radioDevice.h"
 #include "radioVector.h"
 #include "radioClock.h"

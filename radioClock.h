@@ -1,7 +1,6 @@
 #ifndef OBTS_TRANSCEIVER52M_RADIOCLOCK_H
 #define OBTS_TRANSCEIVER52M_RADIOCLOCK_H
 
-//#include "GSMCommon.h"
 #include "gsmtime.h"
 #include "Threads.h" // FIXME: For Mutex and Signal.  Should make these into separate files.
 

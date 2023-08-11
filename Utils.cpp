@@ -16,12 +16,13 @@
 
 #include <unistd.h>		// For usleep
 #include <sys/time.h>	// For gettimeofday
-#include <stdio.h>		// For vsnprintf
+#include <cstdio>		// For vsnprintf
 #include <ostream>		// For ostream
 #include <sstream>		// For ostringstream
-#include <string.h>		// For strcpy
-#include <stdlib.h>		// For malloc
+#include <cstring>		// For strcpy
+#include <cstdlib>		// For malloc
 #include <execinfo.h>	// For backtrace
+
 #include "Utils.h"
 #include "MemoryLeak.h"
 

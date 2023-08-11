@@ -24,12 +24,12 @@
 
 #include <vector>
 
-#include "sigProcLib.h"
 
 #include "gsmtime.h"
 #include "LinkedLists.h"
 #include "Interthread.h"
-//#include "GSMCommon.h"
+
+#include "sigProcLib.h"
 
 class radioVector : public signalVector {
 public:

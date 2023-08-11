@@ -23,7 +23,8 @@
 #include <string.h>
 #include <math.h>		// for sqrtf
 #include <typeinfo>
-#include "Logger.h"
+
+//#include "Logger.h"
 
 
 namespace Utils {
@@ -40,6 +41,7 @@ string format(const char *fmt, ...) __attribute__((format (printf,1,2)));
 
 // format1 used to prevent C++ confusion over what function to call here.
 string format1(const char *fmt, ...) __attribute__((format (printf,1,2)));
+
 // We have to enumerate the cross product of argument types here.  This is fixed in C++11.
 inline string format(const char *fmt, string s1) {
 	return format1(fmt,s1.c_str());

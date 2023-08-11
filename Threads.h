@@ -27,10 +27,10 @@
 #ifndef THREADS_H
 #define THREADS_H
 
-#include <stdio.h>
+#include <cstdio>
 #include <pthread.h>
 #include <iostream>
-#include <assert.h>
+#include <cassert>
 #include <unistd.h>
 
 class Mutex;
