@@ -9,6 +9,7 @@
 #include "radioVector.h"
 #include "radioClock.h"
 
+
 /** class to interface the transceiver with the USRP */
 class RadioInterface {
 public:
@@ -21,7 +22,8 @@ public:
     virtual void close();
 
     /** constructor */
-    RadioInterface(RadioDevice * wRadio = NULL, int receiveOffset = 3, int wSPS = 4, GSM::Time wStartTime = GSM::Time(0));
+    // FIXME: Should GSM::Time be used here?  Or move to std::chrono?
+    explicit RadioInterface(RadioDevice * radio = nullptr, int recv_offset = 3, int sps = 4, GSM::Time start_time = GSM::Time(0));
 
     /** destructor */
     virtual ~RadioInterface();
@@ -33,10 +35,10 @@ public:
     void attach(RadioDevice * wRadio, int wRadioOversampling);
 
     /** return the receive FIFO */
-    VectorFIFO * receiveFIFO() { return &mReceiveFIFO; }
+    VectorFIFO * receiveFIFO() { return &m_receive_fifo; }
 
     /** return the basestation clock */
-    RadioClock * getClock(void) { return &mClock; };
+    RadioClock * getClock(void) { return &m_clock; };
 
     /** set transmit frequency */
     bool tuneTx(double freq);
@@ -65,45 +67,41 @@ public:
     double fullScaleOutputValue();
 
     /** set thread priority on current thread */
-    void setPriority() { mRadio->setPriority(); }
+    void setPriority() { m_radio->setPriority(); }
 
     /** get transport window type of attached device */
-    enum RadioDevice::TxWindowType getWindowType() { return mRadio->getWindowType(); }
+    enum RadioDevice::TxWindowType getWindowType() { return m_radio->getWindowType(); }
 
 protected:
+    Thread m_thread; // thread that synchronizes transmit and receive sections
+    VectorFIFO m_receive_fifo; // FIFO that holds receive  bursts
+    RadioDevice * m_radio; // the USRP object
 
-    Thread mAlignRadioServiceLoopThread;          ///< thread that synchronizes transmit and receive sections
+    int m_sps_tx = 1;
+    int m_sps_rx = 1;
+    signalVector * m_send_buffer = nullptr;
+    signalVector * m_recv_buffer = nullptr;
+    unsigned m_send_cursor = 0;
+    unsigned m_recv_cursor = 0;
 
-    VectorFIFO mReceiveFIFO;              ///< FIFO that holds receive  bursts
+    short * m_convert_send_buffer = nullptr;
+    short * m_convert_recv_buffer = nullptr;
 
-    RadioDevice * mRadio;                  ///< the USRP object
+    bool m_underrun = false; // indicates writes to USRP are too slow
+    bool m_overrun = false; // indicates reads from USRP are too slow
+    TIMESTAMP m_write_timestamp = -1; // sample timestamp of next packet written to USRP
+    TIMESTAMP m_read_timestamp = -1; // sample timestamp of next packet read from USRP
 
-    int mSPSTx;
-    int mSPSRx;
-    signalVector * sendBuffer;
-    signalVector * recvBuffer;
-    unsigned sendCursor;
-    unsigned recvCursor;
+    RadioClock m_clock; // the basestation clock!
 
-    short * convertRecvBuffer;
-    short * convertSendBuffer;
+    int m_receive_offset; // offset b/w transmit and receive GSM timestamps, in timeslots
+    bool m_radio_on = false; // indicates radio is on
+    double m_power_scaling = 1.0;
 
-    bool underrun;                  ///< indicates writes to USRP are too slow
-    bool overrun;                      ///< indicates reads from USRP are too slow
-    TIMESTAMP writeTimestamp;              ///< sample timestamp of next packet written to USRP
-    TIMESTAMP readTimestamp;              ///< sample timestamp of next packet read from USRP
-
-    RadioClock mClock;                          ///< the basestation clock!
-
-    int receiveOffset;                          ///< offset b/w transmit and receive GSM timestamps, in timeslots
-
-    bool mOn;                      ///< indicates radio is on
-
-    double powerScaling;
-
-    bool loadTest;
-    int mNumARFCNs;
-    signalVector * finalVec, * finalVec9;
+    bool m_load_test = false;
+    int m_num_arfcns = 0;
+    signalVector * m_final_vec = nullptr;
+    signalVector * m_final_vec9 = nullptr;
 
 private:
 
@@ -137,29 +135,24 @@ void *AlignRadioServiceLoopAdapter(RadioInterface*);
 #endif
 
 class RadioInterfaceResamp : public RadioInterface {
-
-private:
-    signalVector * innerSendBuffer;
-    signalVector * outerSendBuffer;
-    signalVector * innerRecvBuffer;
-    signalVector * outerRecvBuffer;
-
-    void pushBuffer();
-
-    void pullBuffer();
-
 public:
+    explicit RadioInterfaceResamp(RadioDevice * radio = nullptr, int recv_offset = 3, int sps = 4, GSM::Time start_time = GSM::Time(0));
 
-    RadioInterfaceResamp(RadioDevice * wRadio = NULL,
-                         int receiveOffset = 3,
-                         int wSPS = 4,
-                         GSM::Time wStartTime = GSM::Time(0));
-
-    ~RadioInterfaceResamp();
+    ~RadioInterfaceResamp() override;
 
     bool init(int type);
 
     void close();
+
+private:
+    signalVector * m_inner_send_buffer = nullptr;
+    signalVector * m_outer_send_buffer = nullptr;
+    signalVector * m_inner_recv_buffer = nullptr;
+    signalVector * m_outer_recv_buffer = nullptr;
+
+    void pushBuffer();
+
+    void pullBuffer();
 };
 
 #endif //OBTS_TRANSCEIVER52M_RADIOINTERFACE_H

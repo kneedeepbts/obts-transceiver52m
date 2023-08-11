@@ -1,6 +1,5 @@
 #include "radioInterface.h"
 
-
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 #include "spdlog/spdlog.h"
 
@@ -11,74 +10,86 @@ extern "C" {
 #define CHUNK 625
 #define NUMCHUNKS 4
 
-RadioInterface::RadioInterface(RadioDevice * wRadio,
-                               int wReceiveOffset,
-                               int wSPS,
-                               GSM::Time wStartTime)
-        : underrun(false), sendCursor(0), recvCursor(0), mOn(false),
-          mRadio(wRadio), receiveOffset(wReceiveOffset),
-          mSPSTx(wSPS), mSPSRx(1), powerScaling(1.0),
-          loadTest(false), sendBuffer(NULL), recvBuffer(NULL),
-          convertRecvBuffer(NULL), convertSendBuffer(NULL) {
-    mClock.set(wStartTime);
+RadioInterface::RadioInterface(RadioDevice * radio, int recv_offset, int sps, GSM::Time start_time) {
+    m_radio = radio;
+    m_receive_offset = recv_offset;
+    m_sps_tx = sps;
+    m_clock.set(start_time);
 }
 
 RadioInterface::~RadioInterface() {
-    close();
+    //close();
+    delete m_send_buffer;
+    delete m_recv_buffer;
+    delete m_convert_send_buffer;
+    delete m_convert_recv_buffer;
+
+    m_send_buffer = nullptr;
+    m_recv_buffer = nullptr;
+    m_convert_send_buffer = nullptr;
+    m_convert_recv_buffer = nullptr;
 }
 
 bool RadioInterface::init(int type) {
-    if (type != RadioDevice::NORMAL)
+    if (type != RadioDevice::NORMAL) {
+        // FIXME: Can the NORMAL and RESAMP versions of this class be integrated?
+        SPDLOG_ERROR("Attempting to use the NORMAL radio interface when resampling is needed.");
         return false;
+    }
 
     close();
 
-    sendBuffer = new signalVector(CHUNK * mSPSTx);
-    recvBuffer = new signalVector(NUMCHUNKS * CHUNK * mSPSRx);
+    // FIXME: Put these defines somewhere sane, like a static variable in the class?
+    m_send_buffer = new signalVector(CHUNK * m_sps_tx);
+    m_recv_buffer = new signalVector(NUMCHUNKS * CHUNK * m_sps_rx);
 
-    convertSendBuffer = new short[sendBuffer->size() * 2];
-    convertRecvBuffer = new short[recvBuffer->size() * 2];
+    m_convert_send_buffer = new short[m_send_buffer->size() * 2];
+    m_convert_recv_buffer = new short[m_recv_buffer->size() * 2];
 
-    sendCursor = 0;
-    recvCursor = 0;
+    m_send_cursor = 0;
+    m_recv_cursor = 0;
 
     return true;
 }
 
 void RadioInterface::close() {
-    delete sendBuffer;
-    delete recvBuffer;
-    delete convertSendBuffer;
-    delete convertRecvBuffer;
+    delete m_send_buffer;
+    delete m_recv_buffer;
+    delete m_convert_send_buffer;
+    delete m_convert_recv_buffer;
 
-    sendBuffer = nullptr;
-    recvBuffer = nullptr;
-    convertRecvBuffer = nullptr;
-    convertSendBuffer = nullptr;
+    m_send_buffer = nullptr;
+    m_recv_buffer = nullptr;
+    m_convert_send_buffer = nullptr;
+    m_convert_recv_buffer = nullptr;
 }
 
 
 double RadioInterface::fullScaleInputValue() {
-    return mRadio->fullScaleInputValue();
+    return m_radio->fullScaleInputValue();
 }
 
 double RadioInterface::fullScaleOutputValue() {
-    return mRadio->fullScaleOutputValue();
+    return m_radio->fullScaleOutputValue();
 }
 
 
 void RadioInterface::setPowerAttenuation(double atten) {
     double rfGain, digAtten;
 
-    rfGain = mRadio->setTxGain(mRadio->maxTxGain() - atten);
-    digAtten = atten - mRadio->maxTxGain() + rfGain;
+    rfGain = m_radio->setTxGain(m_radio->maxTxGain() - atten);
+    digAtten = atten - m_radio->maxTxGain() + rfGain;
 
     if (digAtten < 1.0)
-        powerScaling = 1.0;
+        m_power_scaling = 1.0;
     else
-        powerScaling = 1.0 / sqrt(pow(10, (digAtten / 10.0)));
+        m_power_scaling = 1.0 / sqrt(pow(10, (digAtten / 10.0)));
 }
 
+// FIXME: This appears to be just copying data from one data structure to another.  This
+//        shouldn't use memset or memcpy, but instead should use a more modern method.
+//        Really should let the compiler handle this.  Also, see if it's possible to not
+//        need to do this copy in the first place.
 int RadioInterface::radioifyVector(signalVector &wVector, float * retVector, bool zero) {
     if (zero) {
         memset(retVector, 0, wVector.size() * 2 * sizeof(float));
@@ -90,10 +101,14 @@ int RadioInterface::radioifyVector(signalVector &wVector, float * retVector, boo
     return wVector.size();
 }
 
+// FIXME: This appears to be just copying data from one data structure to another.  This
+//        shouldn't use memset or memcopy, but instead should use a more modern method.
+//        Really should let the compiler handle this.  Also, see if it's possible to not
+//        need to do this copy in the first place.
 int RadioInterface::unRadioifyVector(float * floatVector, signalVector &newVector) {
     signalVector::iterator itr = newVector.begin();
 
-    if (newVector.size() > recvCursor) {
+    if (newVector.size() > m_recv_cursor) {
         SPDLOG_ERROR("Insufficient number of samples in receive buffer");
         return -1;
     }
@@ -106,11 +121,11 @@ int RadioInterface::unRadioifyVector(float * floatVector, signalVector &newVecto
 }
 
 bool RadioInterface::tuneTx(double freq) {
-    return mRadio->setTxFreq(freq);
+    return m_radio->setTxFreq(freq);
 }
 
 bool RadioInterface::tuneRx(double freq) {
-    return mRadio->setRxFreq(freq);
+    return m_radio->setRxFreq(freq);
 }
 
 
@@ -119,16 +134,18 @@ void RadioInterface::start() {
 #ifdef USRP1
     mAlignRadioServiceLoopThread.start((void * (*)(void*))AlignRadioServiceLoopAdapter, (void*)this);
 #endif
-    writeTimestamp = mRadio->initialWriteTimestamp();
-    readTimestamp = mRadio->initialReadTimestamp();
-    mRadio->start();
+    m_write_timestamp = m_radio->initialWriteTimestamp();
+    m_read_timestamp = m_radio->initialReadTimestamp();
+    m_radio->start();
     SPDLOG_DEBUG("Radio started");
-    mRadio->updateAlignment(writeTimestamp - 10000);
-    mRadio->updateAlignment(writeTimestamp - 10000);
+    m_radio->updateAlignment(m_write_timestamp - 10000);
+    m_radio->updateAlignment(m_write_timestamp - 10000);
 
-    mOn = true;
+    m_radio_on = true;
 }
 
+// FIXME: Since the USRP1 isn't supported in this class, is this needed?  Or should
+//        this code be updated to handle the USRP in the same executable?
 #ifdef USRP1
 void *AlignRadioServiceLoopAdapter(RadioInterface *radioInterface)
 {
@@ -146,88 +163,88 @@ void RadioInterface::alignRadio() {
 #endif
 
 void RadioInterface::driveTransmitRadio(signalVector &radioBurst, bool zeroBurst) {
-    if (!mOn) {
+    if (!m_radio_on) {
         return;
     }
 
-    radioifyVector(radioBurst, (float *) (sendBuffer->begin() + sendCursor), zeroBurst);
-
-    sendCursor += radioBurst.size();
-
+    radioifyVector(radioBurst, (float *) (m_send_buffer->begin() + m_send_cursor), zeroBurst);
+    m_send_cursor += radioBurst.size();
     pushBuffer();
 }
 
 void RadioInterface::driveReceiveRadio() {
-
-    if (!mOn) {
+    if (!m_radio_on) {
         return;
     }
 
-    if (mReceiveFIFO.size() > 8) {
+    // FIXME: Why is there a FIFO, a recv_buffer, and a convert_recv_buffer?  Seems
+    //        like a lot of copying for a bit of data.
+    if (m_receive_fifo.size() > 8) {
         return;
     }
-
     pullBuffer();
 
-    GSM::Time rcvClock = mClock.get();
-    rcvClock.decTN(receiveOffset);
+    GSM::Time rcvClock = m_clock.get();
+    rcvClock.decTN(m_receive_offset);
     unsigned tN = rcvClock.TN();
-    int rcvSz = recvCursor;
+    int rcvSz = m_recv_cursor;
     int readSz = 0;
     const int symbolsPerSlot = gSlotLen + 8;
 
     // while there's enough data in receive buffer, form received
     //    GSM bursts and pass up to Transceiver
     // Using the 157-156-156-156 symbols per timeslot format.
-    while (rcvSz > (symbolsPerSlot + (tN % 4 == 0)) * mSPSRx) {
-        signalVector rxVector((symbolsPerSlot + (tN % 4 == 0)) * mSPSRx);
-        unRadioifyVector((float *) (recvBuffer->begin() + readSz), rxVector);
+    while (rcvSz > (symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx) {
+        signalVector rxVector((symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx);
+        unRadioifyVector((float *) (m_recv_buffer->begin() + readSz), rxVector);
         GSM::Time tmpTime = rcvClock;
         if (rcvClock.FN() >= 0) {
             //LOG(DEBUG) << "FN: " << rcvClock.FN();
             radioVector * rxBurst = nullptr;
-            if (!loadTest)
+            if (!m_load_test)
                 rxBurst = new radioVector(rxVector, tmpTime);
             else {
+                // FIXME: Should there be load test code here?
                 if (tN % 4 == 0)
-                    rxBurst = new radioVector(*finalVec9, tmpTime);
+                    rxBurst = new radioVector(*m_final_vec9, tmpTime);
                 else
-                    rxBurst = new radioVector(*finalVec, tmpTime);
+                    rxBurst = new radioVector(*m_final_vec, tmpTime);
             }
-            mReceiveFIFO.put(rxBurst);
+            m_receive_fifo.put(rxBurst);
         }
-        mClock.incTN();
+        m_clock.incTN();
         rcvClock.incTN();
-        readSz += (symbolsPerSlot + (tN % 4 == 0)) * mSPSRx;
-        rcvSz -= (symbolsPerSlot + (tN % 4 == 0)) * mSPSRx;
+        readSz += (symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx;
+        rcvSz -= (symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx;
 
         tN = rcvClock.TN();
     }
 
     if (readSz > 0) {
-        memmove(recvBuffer->begin(), recvBuffer->begin() + readSz, (recvCursor - readSz) * 2 * sizeof(float));
+        // FIXME: Again, need to do this in a more modern way, one that's safer and the compiler will optimize.
+        memmove(m_recv_buffer->begin(), m_recv_buffer->begin() + readSz, (m_recv_cursor - readSz) * 2 * sizeof(float));
 
-        recvCursor -= readSz;
+        m_recv_cursor -= readSz;
     }
 }
 
 bool RadioInterface::isUnderrun() {
-    bool retVal = underrun;
-    underrun = false; // FIXME: Why would this clear the underrun flag?
+    bool retVal = m_underrun;
+    m_underrun = false; // FIXME: Why would this clear the underrun flag?
 
     return retVal;
 }
 
 double RadioInterface::setRxGain(double dB) {
-    if (mRadio) {
-        return mRadio->setRxGain(dB);
+    if (m_radio) {
+        return m_radio->setRxGain(dB);
     }
     return -1;
 }
 
 double RadioInterface::getRxGain() {
-    if (mRadio) {
-        return mRadio->getRxGain();
+    if (m_radio) {
+        return m_radio->getRxGain();
     }
     return -1;
 }
@@ -238,47 +255,47 @@ void RadioInterface::pullBuffer() {
     int num_recv;
     float * output;
 
-    if (recvCursor > recvBuffer->size() - CHUNK) {
+    if (m_recv_cursor > m_recv_buffer->size() - CHUNK) {
         return;
     }
 
     /* Outer buffer access size is fixed */
-    num_recv = mRadio->readSamples(convertRecvBuffer, CHUNK, &overrun, readTimestamp, &local_underrun);
+    num_recv = m_radio->readSamples(m_convert_recv_buffer, CHUNK, &m_overrun, m_read_timestamp, &local_underrun);
     if (num_recv != CHUNK) {
         SPDLOG_ERROR("Receive error {}", num_recv);
         return;
     }
 
-    output = (float *) (recvBuffer->begin() + recvCursor);
+    output = (float *) (m_recv_buffer->begin() + m_recv_cursor);
 
-    convert_short_float(output, convertRecvBuffer, 2 * num_recv);
+    convert_short_float(output, m_convert_recv_buffer, 2 * num_recv);
 
-    underrun |= local_underrun;
+    m_underrun |= local_underrun;
 
-    readTimestamp += num_recv;
-    recvCursor += num_recv;
+    m_read_timestamp += num_recv;
+    m_recv_cursor += num_recv;
 }
 
 /* Send timestamped chunk to the device with arbitrary size */
 void RadioInterface::pushBuffer() {
     int num_sent;
 
-    if (sendCursor < CHUNK) {
+    if (m_send_cursor < CHUNK) {
         return;
     }
 
-    if (sendCursor > sendBuffer->size()) {
+    if (m_send_cursor > m_send_buffer->size()) {
         SPDLOG_ERROR("Send buffer overflow");
     }
 
-    convert_float_short(convertSendBuffer, (float *) sendBuffer->begin(), powerScaling, 2 * sendCursor);
+    convert_float_short(m_convert_send_buffer, (float *) m_send_buffer->begin(), m_power_scaling, 2 * m_send_cursor);
 
     /* Send the all samples in the send buffer */
-    num_sent = mRadio->writeSamples(convertSendBuffer, sendCursor, &underrun, writeTimestamp);
-    if (num_sent != sendCursor) {
+    num_sent = m_radio->writeSamples(m_convert_send_buffer, m_send_cursor, &m_underrun, m_write_timestamp);
+    if (num_sent != m_send_cursor) {
         SPDLOG_ERROR("Transmit error {}", num_sent);
     }
 
-    writeTimestamp += num_sent;
-    sendCursor = 0;
+    m_write_timestamp += num_sent;
+    m_send_cursor = 0;
 }
