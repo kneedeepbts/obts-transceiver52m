@@ -2,13 +2,16 @@
 #define OBTS_TRANSCEIVER52M_RADIOINTERFACE_H
 
 
-#include "sigProcLib.h"
-#include "GSMCommon.h"
+
+//#include "GSMCommon.h"
+#include "gsmtime.h"
+
 #include "LinkedLists.h"
+
 #include "radioDevice.h"
 #include "radioVector.h"
 #include "radioClock.h"
-
+#include "sigProcLib.h"
 
 /** class to interface the transceiver with the USRP */
 class RadioInterface {
@@ -22,8 +25,8 @@ public:
     virtual void close();
 
     /** constructor */
-    // FIXME: Should GSM::Time be used here?  Or move to std::chrono?
-    explicit RadioInterface(RadioDevice * radio = nullptr, int recv_offset = 3, int sps = 4, GSM::Time start_time = GSM::Time(0));
+    // FIXME: Should GsmTime be used here?  Or move to std::chrono?
+    explicit RadioInterface(RadioDevice * radio = nullptr, int recv_offset = 3, int sps = 4, GsmTime start_time = GsmTime(0));
 
     /** destructor */
     virtual ~RadioInterface();
@@ -136,7 +139,7 @@ void *AlignRadioServiceLoopAdapter(RadioInterface*);
 
 class RadioInterfaceResamp : public RadioInterface {
 public:
-    explicit RadioInterfaceResamp(RadioDevice * radio = nullptr, int recv_offset = 3, int sps = 4, GSM::Time start_time = GSM::Time(0));
+    explicit RadioInterfaceResamp(RadioDevice * radio = nullptr, int recv_offset = 3, int sps = 4, GsmTime start_time = GsmTime(0));
 
     ~RadioInterfaceResamp() override;
 

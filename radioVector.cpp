@@ -1,138 +1,106 @@
-/*
- * Written by Thomas Tsou <ttsou@vt.edu>
- * Based on code by Harvind S Samra <hssamra@kestrelsp.com>
- *
- * Copyright 2011 Free Software Foundation, Inc.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * See the COPYING file in the main directory for details.
- */
-
 #include "radioVector.h"
 
-radioVector::radioVector(const signalVector& wVector, GSM::Time& wTime)
-	: signalVector(wVector), mTime(wTime)
-{
+radioVector::radioVector(const signalVector &wVector, GsmTime &wTime)
+        : signalVector(wVector), mTime(wTime) {
 }
 
-GSM::Time radioVector::getTime() const
-{
-	return mTime;
+GsmTime radioVector::getTime() const {
+    return mTime;
 }
 
-//void radioVector::setTime(const GSM::Time& wTime)
-//{
-//	mTime = wTime;
-//}
-
-bool radioVector::operator>(const radioVector& other) const
+void radioVector::setTime(const GsmTime& wTime)
 {
-	return mTime > other.mTime;
+	mTime = wTime;
 }
 
-noiseVector::noiseVector(size_t n)
-{
-	this->resize(n);
-	it = this->begin();
+bool radioVector::operator>(const radioVector &other) const {
+    return mTime > other.mTime;
 }
 
-float noiseVector::avg()
-{
-	float val = 0.0;
-
-	for (int i = 0; i < size(); i++)
-		val += (*this)[i];
-
-	return val / (float) size();
+noiseVector::noiseVector(size_t n) {
+    this->resize(n);
+    it = this->begin();
 }
 
-bool noiseVector::insert(float val)
-{
-	if (!size())
-		return false;
+float noiseVector::avg() {
+    float val = 0.0;
 
-	if (it == this->end())
-		it = this->begin();
+    for (int i = 0; i < size(); i++)
+        val += (*this)[i];
 
-	*it++ = val;
-
-	return true;
+    return val / (float) size();
 }
 
-unsigned VectorFIFO::size()
-{
-	return mQ.size();
+bool noiseVector::insert(float val) {
+    if (empty())
+        return false;
+
+    if (it == this->end())
+        it = this->begin();
+
+    *it++ = val;
+
+    return true;
 }
 
-void VectorFIFO::put(radioVector *ptr)
-{
-	mQ.put((void*) ptr);
+unsigned VectorFIFO::size() {
+    return mQ.size();
 }
 
-radioVector *VectorFIFO::get()
-{
-	return (radioVector*) mQ.get();
+void VectorFIFO::put(radioVector * ptr) {
+    mQ.put((void *) ptr);
 }
 
-//GSM::Time VectorQueue::nextTime() const
-//{
-//	GSM::Time retVal;
-//	mLock.lock();
-//
-//	while (mQ.size()==0)
-//		mWriteSignal.wait(mLock);
-//
-//	retVal = mQ.top()->getTime();
-//	mLock.unlock();
-//
-//	return retVal;
-//}
+radioVector * VectorFIFO::get() {
+    return (radioVector *) mQ.get();
+}
 
-radioVector* VectorQueue::getStaleBurst(const GSM::Time& targTime)
+GsmTime VectorQueue::nextTime() const
 {
+	GsmTime retVal;
 	mLock.lock();
-	if ((mQ.size()==0)) {
-		mLock.unlock();
-		return NULL;
-	}
 
-	if (mQ.top()->getTime() < targTime) {
-		radioVector* retVal = mQ.top();
-		mQ.pop();
-		mLock.unlock();
-		return retVal;
-	}
+	while (mQ.empty())
+		mWriteSignal.wait(mLock);
+
+	retVal = mQ.top()->getTime();
 	mLock.unlock();
 
-	return NULL;
+	return retVal;
 }
 
-radioVector* VectorQueue::getCurrentBurst(const GSM::Time& targTime)
-{
-	mLock.lock();
-	if ((mQ.size()==0)) {
-		mLock.unlock();
-		return NULL;
-	}
+radioVector * VectorQueue::getStaleBurst(const GsmTime &targTime) {
+    mLock.lock();
+    if ((mQ.empty())) {
+        mLock.unlock();
+        return nullptr;
+    }
 
-	if (mQ.top()->getTime() == targTime) {
-		radioVector* retVal = mQ.top();
-		mQ.pop();
-		mLock.unlock();
-		return retVal;
-	}
-	mLock.unlock();
+    if (mQ.top()->getTime() < targTime) {
+        radioVector * retVal = mQ.top();
+        mQ.pop();
+        mLock.unlock();
+        return retVal;
+    }
+    mLock.unlock();
 
-	return NULL;
+    return nullptr;
+}
+
+radioVector * VectorQueue::getCurrentBurst(const GsmTime &targTime) {
+    mLock.lock();
+    if ((mQ.empty())) {
+        mLock.unlock();
+        return nullptr;
+    }
+
+    if (mQ.top()->getTime() == targTime) {
+        radioVector * retVal = mQ.top();
+        mQ.pop();
+        mLock.unlock();
+        return retVal;
+    }
+    mLock.unlock();
+
+    return nullptr;
 }

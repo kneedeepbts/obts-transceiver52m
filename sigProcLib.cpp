@@ -1,10 +1,31 @@
 #include "sigProcLib.h"
 
-#include "GSMCommon.h"
+
+#include "BitVector.h"
+
+//#include "GSMCommon.h"
 
 extern "C" {
 #include "convolve.h"
 }
+
+// FIXME: Externs copied from GSMCommon.h
+//        Currently being compiled in as globals.  Need a better method
+//        of getting to them.
+//extern const BitVector2 gTrainingSequence[];
+//extern const BitVector2 gRACHSynchSequence;
+const BitVector2 gTrainingSequence[] = {
+        BitVector2("00100101110000100010010111"),
+        BitVector2("00101101110111100010110111"),
+        BitVector2("01000011101110100100001110"),
+        BitVector2("01000111101101000100011110"),
+        BitVector2("00011010111001000001101011"),
+        BitVector2("01001110101100000100111010"),
+        BitVector2("10100111110110001010011111"),
+        BitVector2("11101111000100101110111100"),
+};
+const BitVector2 gRACHSynchSequence("01001011011111111001100110101010001111000");
+
 
 /* Clipping detection threshold */
 #define CLIP_THRESH 30000.0f

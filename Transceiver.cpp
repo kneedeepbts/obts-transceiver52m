@@ -47,16 +47,12 @@
 /* Number of running values use in noise average */
 #define NOISE_CNT            20
 
-Transceiver::Transceiver(int wBasePort,
-                         const char * TRXAddress,
-                         int wSPS,
-                         GSM::Time wTransmitLatency,
-                         RadioInterface * wRadioInterface)
+Transceiver::Transceiver(int wBasePort, const char * TRXAddress, int wSPS, GsmTime wTransmitLatency, RadioInterface * wRadioInterface)
         : mDataSocket(wBasePort + 2, TRXAddress, wBasePort + 102),
           mControlSocket(wBasePort + 1, TRXAddress, wBasePort + 101),
           mClockSocket(wBasePort, TRXAddress, wBasePort + 100),
           mSPSTx(wSPS), mSPSRx(1), mNoises(NOISE_CNT) {
-    GSM::Time startTime(random() % gHyperframe, 0);
+    GsmTime startTime(random() % GsmTime::g_hyperframe, 0);
 
     mRxServiceLoopThread = new Thread(32768);
     mTxServiceLoopThread = new Thread(32768);
@@ -86,6 +82,9 @@ Transceiver::~Transceiver() {
     mTransmitPriorityQueue.clear();
 }
 
+// FIXME: From GSMCommon.cpp
+const BitVector2 gDummyBurst("0001111101101110110000010100100111000001001000100000001111100011100010111000101110001010111010010100011001100111001111010011111000100101111101010000");
+
 bool Transceiver::init() {
     if (!sigProcLibSetup(mSPSTx)) {
         LOG(ALERT) << "Failed to initialize signal processing library";
@@ -94,9 +93,7 @@ bool Transceiver::init() {
 
     // initialize filler tables with dummy bursts
     for (int i = 0; i < 8; i++) {
-        signalVector * modBurst = modulateBurst(gDummyBurst,
-                                                8 + (i % 4 == 0),
-                                                mSPSTx);
+        signalVector * modBurst = modulateBurst(gDummyBurst, 8 + (i % 4 == 0), mSPSTx);
         if (!modBurst) {
             sigProcLibDestroy();
             LOG(ALERT) << "Failed to initialize filler table";
@@ -123,7 +120,7 @@ bool Transceiver::init() {
 
 radioVector * Transceiver::fixRadioVector(BitVector &burst,
                                           int RSSI,
-                                          GSM::Time &wTime) {
+                                          GsmTime &wTime) {
 
     // modulate and stick into queue
     signalVector * modBurst = modulateBurst(burst,
@@ -177,7 +174,7 @@ void Transceiver::setFiller(radioVector * rv, bool allocate, bool force) {
     }
 }
 
-void Transceiver::pushRadioVector(GSM::Time &nowTime) {
+void Transceiver::pushRadioVector(GsmTime &nowTime) {
 
     // dump stale bursts, if any
     while (radioVector * staleBurst = mTransmitPriorityQueue.getStaleBurst(nowTime)) {
@@ -255,7 +252,7 @@ void Transceiver::setModulus(int timeslot) {
 }
 
 
-Transceiver::CorrType Transceiver::expectedCorrType(GSM::Time currTime) {
+Transceiver::CorrType Transceiver::expectedCorrType(GsmTime currTime) {
 
     unsigned burstTN = currTime.TN();
     unsigned burstFN = currTime.FN();
@@ -319,7 +316,7 @@ Transceiver::CorrType Transceiver::expectedCorrType(GSM::Time currTime) {
 
 }
 
-SoftVector * Transceiver::pullRadioVector(GSM::Time &wTime,
+SoftVector * Transceiver::pullRadioVector(GsmTime &wTime,
                                           int &RSSI,
                                           int &timingOffset) {
     bool needDFE = false;
@@ -626,6 +623,9 @@ void Transceiver::driveControl() {
 
 }
 
+// FIXME: From GSMTransfer.h
+static const unsigned gSlotLen = 148;	///< number of symbols per slot, not counting guard periods
+
 bool Transceiver::driveTransmitPriorityQueue() {
 
     char buffer[gSlotLen + 50];
@@ -647,17 +647,17 @@ bool Transceiver::driveTransmitPriorityQueue() {
 
 
     /*
-    if (GSM::Time(frameNum,timeSlot) >  mTransmitDeadlineClock + GSM::Time(51,0)) {
+    if (GsmTime(frameNum,timeSlot) >  mTransmitDeadlineClock + GsmTime(51,0)) {
       // stale burst
-      //LOG(DEBUG) << "FAST! "<< GSM::Time(frameNum,timeSlot);
+      //LOG(DEBUG) << "FAST! "<< GsmTime(frameNum,timeSlot);
       //writeClockInterface();
       }*/
 
 /*
   DAB -- Just let these go through the demod.
-  if (GSM::Time(frameNum,timeSlot) < mTransmitDeadlineClock) {
+  if (GsmTime(frameNum,timeSlot) < mTransmitDeadlineClock) {
     // stale burst from GSM core
-    LOG(NOTICE) << "STALE packet on GSM->TRX interface at time "<< GSM::Time(frameNum,timeSlot);
+    LOG(NOTICE) << "STALE packet on GSM->TRX interface at time "<< GsmTime(frameNum,timeSlot);
     return false;
   }
 */
@@ -665,10 +665,10 @@ bool Transceiver::driveTransmitPriorityQueue() {
     // periodically update GSM core clock
     //LOG(DEBUG) << "mTransmitDeadlineClock " << mTransmitDeadlineClock
     //		<< " mLastClockUpdateTime " << mLastClockUpdateTime;
-    if (mTransmitDeadlineClock > mLastClockUpdateTime + GSM::Time(216, 0))
+    if (mTransmitDeadlineClock > mLastClockUpdateTime + GsmTime(216, 0))
         writeClockInterface();
 
-    LOG(DEBUG) << "rcvd. burst at: " << GSM::Time(frameNum, timeSlot) << LOGVAR(fillerFlag);
+    LOG(DEBUG) << "rcvd. burst at: " << GsmTime(frameNum, timeSlot) << LOGVAR(fillerFlag);
 
     int RSSI = (int) buffer[5];
     static BitVector newBurst(gSlotLen);
@@ -677,7 +677,7 @@ bool Transceiver::driveTransmitPriorityQueue() {
     while (itr < newBurst.end())
         *itr++ = *bufferItr++;
 
-    GSM::Time currTime = GSM::Time(frameNum, timeSlot);
+    GsmTime currTime = GsmTime(frameNum, timeSlot);
 
     radioVector * newVec = fixRadioVector(newBurst, RSSI, currTime);
 
@@ -699,7 +699,7 @@ void Transceiver::driveReceiveFIFO() {
     SoftVector * rxBurst = NULL;
     int RSSI;
     int TOA;  // in 1/256 of a symbol
-    GSM::Time burstTime;
+    GsmTime burstTime;
 
     mRadioInterface->driveReceiveRadio();
 
@@ -757,16 +757,16 @@ void Transceiver::driveTransmitFIFO() {
             if (mRadioInterface->getWindowType() == RadioDevice::TX_WINDOW_USRP1) {
                 if (mRadioInterface->isUnderrun()) {
                     // only update latency at the defined frame interval
-                    if (radioClock->get() > mLatencyUpdateTime + GSM::Time(USB_LATENCY_INTRVL)) {
-                        mTransmitLatency = mTransmitLatency + GSM::Time(1, 0);
+                    if (radioClock->get() > mLatencyUpdateTime + GsmTime(USB_LATENCY_INTRVL)) {
+                        mTransmitLatency = mTransmitLatency + GsmTime(1, 0);
                         LOG(INFO) << "new latency: " << mTransmitLatency;
                         mLatencyUpdateTime = radioClock->get();
                     }
                 } else {
                     // if underrun hasn't occurred in the last sec (216 frames) drop
                     //    transmit latency by a timeslot
-                    if (mTransmitLatency > GSM::Time(USB_LATENCY_MIN)) {
-                        if (radioClock->get() > mLatencyUpdateTime + GSM::Time(216, 0)) {
+                    if (mTransmitLatency > GsmTime(USB_LATENCY_MIN)) {
+                        if (radioClock->get() > mLatencyUpdateTime + GsmTime(216, 0)) {
                             mTransmitLatency.decTN();
                             LOG(INFO) << "reduced latency: " << mTransmitLatency;
                             mLatencyUpdateTime = radioClock->get();

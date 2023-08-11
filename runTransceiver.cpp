@@ -42,7 +42,7 @@ ReportingTable gReports("/var/log/OpenBTSStats.db");
 GSM::PhysicalStatus gPhysStatus;
 // Configure the BTS object based on the config file.
 // So don't create this until AFTER loading the config file.
-GSMConfig gBTS;
+GSM::GSMConfig gBTS;
 // Note to all from pat:
 // It is inadvisable to statically initialize any non-trivial entity here because
 // the underlying dependencies may not yet have undergone their static initialization.
@@ -176,11 +176,13 @@ int main(int argc, char *argv[]) {
     RadioInterface *radio = nullptr;
     switch (radio_type) {
         case RadioDevice::NORMAL:
-            radio = new RadioInterface(usrp, 3, 4, false);
+            //radio = new RadioInterface(usrp, 3, 4, false);
+            radio = new RadioInterface(usrp, 3, 4); // Why was false being passed in instead of a GSM::Time?
             break;
         case RadioDevice::RESAMP_64M:
         case RadioDevice::RESAMP_100M:
-            radio = new RadioInterfaceResamp(usrp, 3, 4, false);
+            //radio = new RadioInterfaceResamp(usrp, 3, 4, false);
+            radio = new RadioInterfaceResamp(usrp, 3, 4); // Why was false being passed in instead of a GSM::Time?
             break;
         default:
             SPDLOG_ERROR("Unsupported radio type configuration");
@@ -195,7 +197,7 @@ int main(int argc, char *argv[]) {
 
     Transceiver *trx = nullptr;
     if (!failure) {
-        trx = new Transceiver(trxPort, trxAddr.c_str(), 4, GSM::Time(3, 0), radio);
+        trx = new Transceiver(trxPort, trxAddr.c_str(), 4, GsmTime(3, 0), radio);
         if (!trx->init()) {
             SPDLOG_ERROR("Failed to initialize transceiver");
             failure = true;

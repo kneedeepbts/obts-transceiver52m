@@ -22,45 +22,60 @@
 #ifndef RADIOVECTOR_H
 #define RADIOVECTOR_H
 
+#include <vector>
+
 #include "sigProcLib.h"
-#include "GSMCommon.h"
+
+#include "gsmtime.h"
+#include "LinkedLists.h"
+#include "Interthread.h"
+//#include "GSMCommon.h"
 
 class radioVector : public signalVector {
 public:
-	radioVector(const signalVector& wVector, GSM::Time& wTime);
-	GSM::Time getTime() const;
-	void setTime(const GSM::Time& wTime);
-	bool operator>(const radioVector& other) const;
+    radioVector(const signalVector &wVector, GsmTime &wTime);
+
+    [[nodiscard]] GsmTime getTime() const;
+
+    void setTime(const GsmTime &wTime);
+
+    bool operator>(const radioVector &other) const;
 
 private:
-	GSM::Time mTime;
+    GsmTime mTime;
 };
 
 class noiseVector : std::vector<float> {
 public:
-	noiseVector(size_t len = 0);
-	bool insert(float val);
-	float avg();
+    explicit noiseVector(size_t len = 0);
+
+    bool insert(float val);
+
+    float avg();
 
 private:
-	std::vector<float>::iterator it;
+    std::vector<float>::iterator it;
 };
 
 class VectorFIFO {
 public:
-	unsigned size();
-	void put(radioVector *ptr);
-	radioVector *get();
+    unsigned size();
+
+    void put(radioVector * ptr);
+
+    radioVector * get();
 
 private:
-	PointerFIFO mQ;
+    PointerFIFO mQ;
 };
 
 class VectorQueue : public InterthreadPriorityQueue<radioVector> {
 public:
-	GSM::Time nextTime() const;
-	radioVector* getStaleBurst(const GSM::Time& targTime);
-	radioVector* getCurrentBurst(const GSM::Time& targTime);
+    GsmTime nextTime() const;
+
+    radioVector * getStaleBurst(const GsmTime &targTime);
+
+    radioVector * getCurrentBurst(const GsmTime &targTime);
 };
 
 #endif /* RADIOVECTOR_H */

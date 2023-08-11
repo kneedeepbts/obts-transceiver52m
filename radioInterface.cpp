@@ -10,7 +10,7 @@ extern "C" {
 #define CHUNK 625
 #define NUMCHUNKS 4
 
-RadioInterface::RadioInterface(RadioDevice * radio, int recv_offset, int sps, GSM::Time start_time) {
+RadioInterface::RadioInterface(RadioDevice * radio, int recv_offset, int sps, GsmTime start_time) {
     m_radio = radio;
     m_receive_offset = recv_offset;
     m_sps_tx = sps;
@@ -172,6 +172,9 @@ void RadioInterface::driveTransmitRadio(signalVector &radioBurst, bool zeroBurst
     pushBuffer();
 }
 
+// FIXME: From GSMTransfer.h
+static const unsigned gSlotLen = 148;	///< number of symbols per slot, not counting guard periods
+
 void RadioInterface::driveReceiveRadio() {
     if (!m_radio_on) {
         return;
@@ -184,7 +187,7 @@ void RadioInterface::driveReceiveRadio() {
     }
     pullBuffer();
 
-    GSM::Time rcvClock = m_clock.get();
+    GsmTime rcvClock = m_clock.get();
     rcvClock.decTN(m_receive_offset);
     unsigned tN = rcvClock.TN();
     int rcvSz = m_recv_cursor;
@@ -197,7 +200,7 @@ void RadioInterface::driveReceiveRadio() {
     while (rcvSz > (symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx) {
         signalVector rxVector((symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx);
         unRadioifyVector((float *) (m_recv_buffer->begin() + readSz), rxVector);
-        GSM::Time tmpTime = rcvClock;
+        GsmTime tmpTime = rcvClock;
         if (rcvClock.FN() >= 0) {
             //LOG(DEBUG) << "FN: " << rcvClock.FN();
             radioVector * rxBurst = nullptr;

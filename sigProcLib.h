@@ -4,11 +4,13 @@
 #include <complex>
 
 #include "Vector.h"
+#include "BitVector.h"
 //#include "Complex.h"
-#include "GSMTransfer.h"
+
+//#include "GSMTransfer.h"
 
 
-using namespace GSM;
+//using namespace GSM;
 
 /** Indicated signalVector symmetry */
 enum Symmetry {

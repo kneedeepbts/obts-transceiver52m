@@ -41,7 +41,7 @@ static int resamp_outchunk = 0;
 short * convertRecvBuffer = nullptr;
 short * convertSendBuffer = nullptr;
 
-RadioInterfaceResamp::RadioInterfaceResamp(RadioDevice * radio, int recv_offset, int sps, GSM::Time start_time)
+RadioInterfaceResamp::RadioInterfaceResamp(RadioDevice * radio, int recv_offset, int sps, GsmTime start_time)
         : RadioInterface(radio, recv_offset, sps, start_time) {}
 
 RadioInterfaceResamp::~RadioInterfaceResamp() {
@@ -176,7 +176,7 @@ void RadioInterfaceResamp::pullBuffer() {
     /* Write to the end of the inner receive buffer */
     rc = dnsampler->rotate((float *) m_outer_recv_buffer->begin(), resamp_outchunk, (float *) (m_inner_recv_buffer->begin() + m_recv_cursor), resamp_inchunk);
     if (rc < 0) {
-        LOG(ALERT) << "Sample rate upsampling error";
+        SPDLOG_ERROR("Sample rate upsampling error");
     }
 
     m_recv_cursor += resamp_inchunk;

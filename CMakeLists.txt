@@ -106,6 +106,8 @@ add_executable(obts_transceiver52m
         CBS.cpp
         smplbuf.cpp
         smplbuf.h
+        gsmtime.cpp
+        gsmtime.h
 )
 
 target_link_libraries(obts_transceiver52m pthread sqlite3 rt ortp uhd)

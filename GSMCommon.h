@@ -338,6 +338,9 @@ int FNCompare(int32_t v1, int32_t v2);
 	GSM frame clock value. GSM 05.02 4.3
 	No internal thread sync.
 */
+// FIXME: Need to pull this out into its own class, as it's used quite a bit.
+//        This GSMCommon.h header carries too much with it that's probably not
+//        needed in the transceiver executable.
 class Time {
 
 	private:

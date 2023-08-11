@@ -29,7 +29,10 @@
 	TRANSMIT_LOGGING	write every burst on the given slot to a log
 */
 
+#include "gsmtime.h"
+
 #include "radioInterface.h"
+
 #include "Interthread.h"
 #include "GSMCommon.h"
 #include "Sockets.h"
@@ -45,8 +48,8 @@ class Transceiver {
 
 private:
 
-    GSM::Time mTransmitLatency;     ///< latency between basestation clock and transmit deadline clock
-    GSM::Time mLatencyUpdateTime;   ///< last time latency was updated
+    GsmTime mTransmitLatency;     ///< latency between basestation clock and transmit deadline clock
+    GsmTime mLatencyUpdateTime;   ///< last time latency was updated
 
     UDPSocket mDataSocket;      ///< socket for writing to/reading from GSM core
     UDPSocket mControlSocket;      ///< socket for writing/reading control commands from GSM core
@@ -61,8 +64,8 @@ private:
     Thread * mControlServiceLoopThread;       ///< thread to process control messages from GSM core
     Thread * mTransmitPriorityQueueServiceLoopThread;///< thread to process transmit bursts from GSM core
 
-    GSM::Time mTransmitDeadlineClock;       ///< deadline for pushing bursts into transmit FIFO
-    GSM::Time mLastClockUpdateTime;         ///< last time clock update was sent up to core
+    GsmTime mTransmitDeadlineClock;       ///< deadline for pushing bursts into transmit FIFO
+    GsmTime mLastClockUpdateTime;         ///< last time clock update was sent up to core
 
     RadioInterface * mRadioInterface;      ///< associated radioInterface object
     double txFullScale;                     ///< full scale input to radio
@@ -103,13 +106,13 @@ private:
     void setFiller(radioVector * rv, bool allocate, bool force);
 
     /** modulate and add a burst to the transmit queue */
-    radioVector * fixRadioVector(BitVector &burst, int RSSI, GSM::Time &wTime);
+    radioVector * fixRadioVector(BitVector &burst, int RSSI, GsmTime &wTime);
 
     /** Push modulated burst into transmit FIFO corresponding to a particular timestamp */
-    void pushRadioVector(GSM::Time &nowTime);
+    void pushRadioVector(GsmTime &nowTime);
 
     /** Pull and demodulate a burst from the receive FIFO */
-    SoftVector * pullRadioVector(GSM::Time &wTime,
+    SoftVector * pullRadioVector(GsmTime &wTime,
                                  int &RSSI,
                                  int &timingOffset);
 
@@ -117,7 +120,7 @@ private:
     void setModulus(int timeslot);
 
     /** return the expected burst type for the specified timestamp */
-    CorrType expectedCorrType(GSM::Time currTime);
+    CorrType expectedCorrType(GsmTime currTime);
 
     /** send messages over the clock socket */
     void writeClockInterface(void);
@@ -136,7 +139,7 @@ private:
     bool mHandoverActive[8];
     unsigned mMaxExpectedDelay;            ///< maximum expected time-of-arrival offset in GSM symbols
 
-    GSM::Time channelEstimateTime[8]; ///< last timestamp of each timeslot's channel estimate
+    GsmTime channelEstimateTime[8]; ///< last timestamp of each timeslot's channel estimate
     signalVector * channelResponse[8];    ///< most recent channel estimate of all timeslots
     float SNRestimate[8];         ///< most recent SNR estimate of all timeslots
     signalVector * DFEForward[8];         ///< most recent DFE feedforward filter of all timeslots
@@ -153,11 +156,7 @@ public:
         @param wTransmitLatency initial setting of transmit latency
         @param radioInterface associated radioInterface object
     */
-    Transceiver(int wBasePort,
-                const char * TRXAddress,
-                int wSPS,
-                GSM::Time wTransmitLatency,
-                RadioInterface * wRadioInterface);
+    Transceiver(int wBasePort, const char * TRXAddress, int wSPS, GsmTime wTransmitLatency, RadioInterface * wRadioInterface);
 
     /** Destructor */
     ~Transceiver();
