@@ -12,49 +12,6 @@
 #include "radioDevice.h"
 #include "Transceiver.h"
 
-// FIXME: Work through these and figure out which are actually needed.
-//#include "GSMCommon.h"
-
-//#include "Reporting.h"
-
-//#include "PhysicalStatus.h"
-
-//#include "GSMConfig.h"
-
-//#include "Peering.h"
-
-//#include "NeighborTable.h"
-
-
-
-
-//std::vector<std::string> configurationCrossCheck(const std::string& key);
-//static const char *cOpenBTSConfigEnv = "OpenBTSConfigFile";
-// Load configuration from a file.
-//ConfigurationTable gConfig(getenv(cOpenBTSConfigEnv)?getenv(cOpenBTSConfigEnv):CONFIGDB,"transceiver", getConfigurationKeys());
-
-// FIXME: Adding this here to make a bunch of dumb externs happy.
-//ReportingTable gReports(gConfig.getStr("Control.Reporting.StatsTable").c_str());
-//ReportingTable gReports("/var/log/OpenBTSStats.db");
-// Physical status reporting
-//GSM::PhysicalStatus gPhysStatus;
-// Configure the BTS object based on the config file.
-// So don't create this until AFTER loading the config file.
-//GSM::GSMConfig gBTS;
-// Note to all from pat:
-// It is inadvisable to statically initialize any non-trivial entity here because
-// the underlying dependencies may not yet have undergone their static initialization.
-// For example, if any of these throw an alarm, the system will crash because
-// the Logger may not have been initialized yet.
-
-// Our interface to the software-defined radio.
-// FIXME: Bypassing the dumb config system...
-//TransceiverManager gTRX(gConfig.getNum("GSM.Radio.ARFCNs"), gConfig.getStr("TRX.IP").c_str(), gConfig.getNum("TRX.Port"));
-//TransceiverManager gTRX(1, "127.0.0.1", 5700);
-/** The global peering interface. */
-//Peering::PeerInterface gPeerInterface;
-/** The global neighbor table. */
-//Peering::NeighborTable gNeighborTable;
 
 // FIXME: This "shutdown" method can stand to be cleaned up, but that's a small problem for later.
 volatile bool gbShutdown = false;

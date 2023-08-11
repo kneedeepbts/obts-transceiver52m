@@ -25,4 +25,4 @@ add_executable(obts_transceiver52m
         gsmtime.cpp
 )
 
-target_link_libraries(obts_transceiver52m pthread rt ortp uhd)
+target_link_libraries(obts_transceiver52m pthread uhd)
