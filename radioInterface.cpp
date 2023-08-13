@@ -176,6 +176,7 @@ void RadioInterface::driveTransmitRadio(signalVector &radioBurst, bool zeroBurst
 static const unsigned gSlotLen = 148;	///< number of symbols per slot, not counting guard periods
 
 void RadioInterface::driveReceiveRadio() {
+    SPDLOG_DEBUG("Start driveReceiveRadio");
     if (!m_radio_on) {
         return;
     }
@@ -185,21 +186,29 @@ void RadioInterface::driveReceiveRadio() {
     if (m_receive_fifo.size() > 8) {
         return;
     }
+    SPDLOG_DEBUG("About to pullBuffer");
     pullBuffer();
+    SPDLOG_DEBUG("After pullBuffer");
 
     GsmTime rcvClock = m_clock.get();
+    SPDLOG_DEBUG("Got rcvClock");
     rcvClock.decTN(m_receive_offset);
+    SPDLOG_DEBUG("After decTN");
     unsigned tN = rcvClock.TN();
     int rcvSz = m_recv_cursor;
     int readSz = 0;
     const int symbolsPerSlot = gSlotLen + 8;
+
+    SPDLOG_DEBUG("About to enter while loop");
 
     // while there's enough data in receive buffer, form received
     //    GSM bursts and pass up to Transceiver
     // Using the 157-156-156-156 symbols per timeslot format.
     while (rcvSz > (symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx) {
         signalVector rxVector((symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx);
+        SPDLOG_DEBUG("After signalVector");
         unRadioifyVector((float *) (m_recv_buffer->begin() + readSz), rxVector);
+        SPDLOG_DEBUG("After unRadioifyVector");
         GsmTime tmpTime = rcvClock;
         if (rcvClock.FN() >= 0) {
             //LOG(DEBUG) << "FN: " << rcvClock.FN();
@@ -215,13 +224,17 @@ void RadioInterface::driveReceiveRadio() {
             }
             m_receive_fifo.put(rxBurst);
         }
+        SPDLOG_DEBUG("After rxBurst");
         m_clock.incTN();
         rcvClock.incTN();
         readSz += (symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx;
         rcvSz -= (symbolsPerSlot + (tN % 4 == 0)) * m_sps_rx;
 
         tN = rcvClock.TN();
+        SPDLOG_DEBUG("End of single loop");
     }
+
+    SPDLOG_DEBUG("After while loop");
 
     if (readSz > 0) {
         // FIXME: Again, need to do this in a more modern way, one that's safer and the compiler will optimize.
