@@ -242,6 +242,8 @@ void RadioInterface::driveReceiveRadio() {
 
         m_recv_cursor -= readSz;
     }
+
+    SPDLOG_DEBUG("After an ugly memmove");
 }
 
 bool RadioInterface::isUnderrun() {
