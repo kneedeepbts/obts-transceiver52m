@@ -526,8 +526,8 @@ int uhd_device::readSamples(short *buf, int len, bool *overrun, TIMESTAMP timest
 
         ts = metadata.time_spec;
         SPDLOG_DEBUG("Received timestamp = {}", ts.get_real_secs());
-
         rc = rx_smpl_buf->write(pkt_buf, num_smpls, metadata.time_spec);
+        SPDLOG_DEBUG("After smpl_buf write");
 
         // Continue on local overrun, exit on other errors
         if ((rc < 0)) {
@@ -537,6 +537,8 @@ int uhd_device::readSamples(short *buf, int len, bool *overrun, TIMESTAMP timest
                 return 0;
         }
     }
+
+    SPDLOG_DEBUG("After while loop");
 
     // We have enough samples
     rc = rx_smpl_buf->read(buf, len, timestamp);
