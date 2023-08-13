@@ -560,6 +560,7 @@ int uhd_device::writeSamples(short *buf, int len, bool *underrun, TIMESTAMP time
     metadata.has_time_spec = true;
     metadata.start_of_burst = false;
     metadata.end_of_burst = false;
+    SPDLOG_DEBUG("Just before time_spec");
     metadata.time_spec = uhd::time_spec_t::from_ticks(timestamp, tx_rate);
 
     *underrun = false;
