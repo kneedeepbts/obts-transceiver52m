@@ -571,6 +571,7 @@ int uhd_device::writeSamples(short *buf, int len, bool *underrun, TIMESTAMP time
     }
 
     // Drop a fixed number of packets (magic value)
+    SPDLOG_DEBUG("aligned: {}, drop_cnt: {}", aligned, drop_cnt);
     if (!aligned) {
         drop_cnt++;
 
@@ -589,6 +590,7 @@ int uhd_device::writeSamples(short *buf, int len, bool *underrun, TIMESTAMP time
         }
     }
 
+    SPDLOG_DEBUG("about to tx_stream->send");
     size_t num_smpls = tx_stream->send(buf, len, metadata);
     SPDLOG_DEBUG("num_smpls: {}", num_smpls);
 
