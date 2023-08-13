@@ -263,20 +263,25 @@ void RadioInterface::pullBuffer() {
     }
 
     /* Outer buffer access size is fixed */
+    SPDLOG_DEBUG("Just before readSamples");
     num_recv = m_radio->readSamples(m_convert_recv_buffer, CHUNK, &m_overrun, m_read_timestamp, &local_underrun);
     if (num_recv != CHUNK) {
         SPDLOG_ERROR("Receive error {}", num_recv);
         return;
     }
 
+    SPDLOG_DEBUG("Just before output");
     output = (float *) (m_recv_buffer->begin() + m_recv_cursor);
-
+    SPDLOG_DEBUG("About to convert_short_float, output: {}", *output);
     convert_short_float(output, m_convert_recv_buffer, 2 * num_recv);
+    SPDLOG_DEBUG("After convert_short_float");
+
 
     m_underrun |= local_underrun;
 
     m_read_timestamp += num_recv;
     m_recv_cursor += num_recv;
+    SPDLOG_DEBUG("End PullBuffer, m_underrun: {}, m_read_timestamp: {}, m_recv_cursor:{}", m_underrun, m_read_timestamp, m_recv_cursor);
 }
 
 /* Send timestamped chunk to the device with arbitrary size */
