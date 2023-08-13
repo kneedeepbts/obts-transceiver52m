@@ -542,16 +542,20 @@ int uhd_device::readSamples(short *buf, int len, bool *overrun, TIMESTAMP timest
 
     // We have enough samples
     rc = rx_smpl_buf->read(buf, len, timestamp);
+    SPDLOG_DEBUG("After smpl_buf read");
+
     if ((rc < 0) || (rc != len)) {
         SPDLOG_ERROR("{}", rx_smpl_buf->str_code(rc)); // FIXME: What are these errors for?
         SPDLOG_ERROR("{}", rx_smpl_buf->str_status()); // FIXME: What are these errors for?
         return 0;
     }
 
+    SPDLOG_DEBUG("return len: {}", len);
     return len;
 }
 
 int uhd_device::writeSamples(short *buf, int len, bool *underrun, TIMESTAMP timestamp, bool isControl) {
+    SPDLOG_DEBUG("writeSamaples");
     uhd::tx_metadata_t metadata;
     metadata.has_time_spec = true;
     metadata.start_of_burst = false;
@@ -586,6 +590,7 @@ int uhd_device::writeSamples(short *buf, int len, bool *underrun, TIMESTAMP time
     }
 
     size_t num_smpls = tx_stream->send(buf, len, metadata);
+    SPDLOG_DEBUG("num_smpls: {}", num_smpls);
 
     if (num_smpls != (unsigned) len) {
         SPDLOG_ERROR("UHD: Device send timed out");
