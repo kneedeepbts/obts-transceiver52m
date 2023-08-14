@@ -263,8 +263,12 @@ Transceiver::CorrType Transceiver::expectedCorrType(GsmTime currTime) {
     unsigned burstTN = currTime.TN();
     unsigned burstFN = currTime.FN();
 
-    if (mHandoverActive[burstTN])
-        return RACH;
+    // FIXME: Bypassing for now due to segfault.  The mHandoverActive array
+    //        holds eight booleans.  Why are we trying to access it with
+    //        burstTN (which is currTime.TN), which is a number much bigger than
+    //        eight.
+    //if (mHandoverActive[burstTN])
+    //    return RACH;
 
     SPDLOG_DEBUG("Before Switch");
     switch (mChanType[burstTN]) {
