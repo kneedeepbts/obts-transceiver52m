@@ -55,7 +55,7 @@ Transceiver::Transceiver(int wBasePort, const char * TRXAddress, int wSPS, GsmTi
           mControlSocket(wBasePort + 1, TRXAddress, wBasePort + 101),
           mClockSocket(wBasePort, TRXAddress, wBasePort + 100),
           mSPSTx(wSPS), mSPSRx(1), mNoises(NOISE_CNT) {
-    GsmTime startTime(random() % GsmTime::g_max_frames, 0); // FIXME: Why is this needed?  Should this use the better random generator?
+    GsmTime startTime = GsmTime(random() % GsmTime::g_max_frames, 0); // FIXME: Why is this needed?  Should this use the better random generator?
 
     mRxServiceLoopThread = new Thread(32768);
     mTxServiceLoopThread = new Thread(32768);
@@ -267,8 +267,8 @@ Transceiver::CorrType Transceiver::expectedCorrType(GsmTime currTime) {
     //        holds eight booleans.  Why are we trying to access it with
     //        burstTN (which is currTime.TN), which is a number much bigger than
     //        eight.
-    //if (mHandoverActive[burstTN])
-    //    return RACH;
+    if (mHandoverActive[burstTN])
+        return RACH;
 
     SPDLOG_DEBUG("Before Switch");
     // FIXME: Have a similar segfault here.  Is the TN() not supposed to be
@@ -723,7 +723,7 @@ void Transceiver::driveReceiveFIFO() {
     SoftVector * rxBurst = NULL;
     int RSSI;
     int TOA;  // in 1/256 of a symbol
-    GsmTime burstTime;
+    GsmTime burstTime = GsmTime();
 
     mRadioInterface->driveReceiveRadio();
 

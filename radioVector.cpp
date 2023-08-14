@@ -57,13 +57,13 @@ radioVector * VectorFIFO::get() {
 
 GsmTime VectorQueue::nextTime() const
 {
-	GsmTime retVal;
+	//GsmTime retVal = GsmTime();
 	mLock.lock();
 
 	while (mQ.empty())
 		mWriteSignal.wait(mLock);
 
-	retVal = mQ.top()->getTime();
+	GsmTime retVal = mQ.top()->getTime();
 	mLock.unlock();
 
 	return retVal;

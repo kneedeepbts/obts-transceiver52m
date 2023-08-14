@@ -21,7 +21,7 @@ public:
 
     /** constructor */
     // FIXME: Should GsmTime be used here?  Or move to std::chrono?
-    explicit RadioInterface(RadioDevice * radio = nullptr, int recv_offset = 3, int sps = 4, GsmTime start_time = GsmTime(0));
+    explicit RadioInterface(RadioDevice * radio = nullptr, int recv_offset = 3, int sps = 4, GsmTime start_time = GsmTime());
 
     /** destructor */
     virtual ~RadioInterface();
