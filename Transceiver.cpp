@@ -258,22 +258,28 @@ void Transceiver::setModulus(int timeslot) {
 
 
 Transceiver::CorrType Transceiver::expectedCorrType(GsmTime currTime) {
-
+    // FIXME: Need to make a "printable method" for logging GsmTime.
+    SPDLOG_DEBUG("Start expectedCorrType - currTime: {}:{}", currTime.TN(), currTime.FN());
     unsigned burstTN = currTime.TN();
     unsigned burstFN = currTime.FN();
 
     if (mHandoverActive[burstTN])
         return RACH;
 
+    SPDLOG_DEBUG("Before Switch");
     switch (mChanType[burstTN]) {
         case NONE:
+            SPDLOG_DEBUG("case NONE");
             return OFF;
             break;
         case FILL:
+            SPDLOG_DEBUG("case FILL");
             return IDLE;
             break;
         case IGPRS:
+            SPDLOG_DEBUG("case IGPRS");
         case I:
+            SPDLOG_DEBUG("case I");
             return TSC;
             /*if (burstFN % 26 == 25)
               return IDLE;
@@ -281,16 +287,21 @@ Transceiver::CorrType Transceiver::expectedCorrType(GsmTime currTime) {
               return TSC;*/
             break;
         case II:
+            SPDLOG_DEBUG("case II");
             return TSC;
             break;
         case III:
+            SPDLOG_DEBUG("case III");
             return TSC;
             break;
         case IV:
+            SPDLOG_DEBUG("case IV");
         case VI:
+            SPDLOG_DEBUG("case VI");
             return RACH;
             break;
         case V: {
+            SPDLOG_DEBUG("case V");
             int mod51 = burstFN % 51;
             if ((mod51 <= 36) && (mod51 >= 14))
                 return RACH;
@@ -303,27 +314,28 @@ Transceiver::CorrType Transceiver::expectedCorrType(GsmTime currTime) {
             break;
         }
         case VII:
+            SPDLOG_DEBUG("case VII");
             if ((burstFN % 51 <= 14) && (burstFN % 51 >= 12))
                 return IDLE;
             else
                 return TSC;
             break;
         case LOOPBACK:
+            SPDLOG_DEBUG("case LOOPBACK");
             if ((burstFN % 51 <= 50) && (burstFN % 51 >= 48))
                 return IDLE;
             else
                 return TSC;
             break;
         default:
+            SPDLOG_DEBUG("default");
             return OFF;
             break;
     }
-
+    SPDLOG_DEBUG("After switch.  Shouldn't get here.");
 }
 
-SoftVector * Transceiver::pullRadioVector(GsmTime &wTime,
-                                          int &RSSI,
-                                          int &timingOffset) {
+SoftVector * Transceiver::pullRadioVector(GsmTime &wTime, int &RSSI, int &timingOffset) {
     bool needDFE = false;
     int success = 0;
     std::complex<float> amplitude = 0.0;
