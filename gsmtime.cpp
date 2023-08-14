@@ -2,10 +2,10 @@
 
 /** Get a clock difference, within the modulus, v1-v2. */
 std::int32_t FNDelta(std::uint32_t v1, std::uint32_t v2) {
-    static const int32_t half_modulus = GsmTime::g_hyperframe / 2;
+    static const int32_t half_modulus = GsmTime::g_max_frames / 2;
     std::int32_t delta = v1 - v2;
-    if (delta >= half_modulus) delta -= GsmTime::g_hyperframe;
-    else if (delta < -half_modulus) delta += GsmTime::g_hyperframe;
+    if (delta >= half_modulus) delta -= GsmTime::g_max_frames;
+    else if (delta < -half_modulus) delta += GsmTime::g_max_frames;
     return delta;
 }
 

@@ -20,18 +20,34 @@ std::int32_t FNCompare(std::uint32_t v1, std::uint32_t v2);
 */
 class GsmTime {
 public:
+    /** There can only be eight timeslots (0 to 7) per GSM 05.02 4.3.2 */
+    static const std::uint8_t g_max_timeslots = 8;
+
+    /** Frame numbers cycle from 0 to 2715647 ((26 x 51 x 2048) - 1) per GSM 05.02 4.3.3 */
+    static const std::uint32_t g_max_frames = (26 * 51 * 2048);
+
     /** The GSM hyperframe is largest time period in the GSM system, GSM 05.02 4.3.3. */
     // It is 2715648 or 3 hours, 28 minutes, 53 seconds
-    static const std::uint32_t g_hyperframe = 2048UL * 26UL * 51UL;
+    // NOTE: The "hyperframe" is a group of frames that includes all of the frame numbers.
+    //       hyperframe = 2048 superframes
+    //       superframe = 26 x 51 (TDMA) frames
+    //       superframe = 51 traffic multiframes (26 frame multiframe)
+    //       superframe = 26 broadcast multiframes (51 frame multiframe)
+    //static const std::uint32_t g_hyperframe = 2048UL * 26UL * 51UL;
 
-    explicit GsmTime(std::uint32_t frame_num = 0, std::uint32_t timeslot_num = 0) : m_frame_number(frame_num),
-                                                                                    m_timeslot_number(timeslot_num) {}
+    // FIXME: What's the best way to validate input values in the constructor?
+    explicit GsmTime(std::uint32_t frame_num = 0, std::uint8_t timeslot_num = 0) {
+        assert(frame_num < g_max_frames);
+        m_frame_number = frame_num;
+        assert(timeslot_num < g_max_timeslots);
+        m_timeslot_number = timeslot_num;
+    }
 
     /** Move the time forward to a given position in a given modulus. */
-    void rollForward(std::uint32_t frame_num, std::uint32_t modulus) {
-        assert(modulus < g_hyperframe);
+    [[maybe_unused]] void rollForward(std::uint32_t frame_num, std::uint32_t modulus) {
+        assert(modulus < g_max_frames);
         while ((m_frame_number % modulus) != frame_num) {
-            m_frame_number = (m_frame_number + 1) % g_hyperframe;
+            m_frame_number = (m_frame_number + 1) % g_max_frames;
         }
     }
 
@@ -40,6 +56,7 @@ public:
     }
 
     void FN(std::uint32_t frame_num) {
+        assert(frame_num < g_max_frames);
         m_frame_number = frame_num;
     }
 
@@ -48,12 +65,13 @@ public:
     }
 
     void TN(std::uint32_t timeslot_num) {
+        assert(timeslot_num < g_max_timeslots);
         m_timeslot_number = timeslot_num;
     }
 
 
     GsmTime &operator++() {
-        m_frame_number = (m_frame_number + 1) % g_hyperframe;
+        m_frame_number = (m_frame_number + 1) % g_max_frames;
         return *this;
     }
 
@@ -64,7 +82,7 @@ public:
             m_timeslot_number += 8;
             m_frame_number -= 1;
             if (m_frame_number < 0) {
-                m_frame_number += g_hyperframe;
+                m_frame_number += g_max_frames;
             }
         }
         return *this;
@@ -75,7 +93,7 @@ public:
         m_timeslot_number += step;
         if (m_timeslot_number > 7) {
             m_timeslot_number -= 8;
-            m_frame_number = (m_frame_number + 1) % g_hyperframe;
+            m_frame_number = (m_frame_number + 1) % g_max_frames;
         }
         return *this;
     }
@@ -83,8 +101,8 @@ public:
     GsmTime &operator+=(std::uint32_t step) {
         // Remember the step might be negative.
         m_frame_number += step;
-        if (m_frame_number < 0) m_frame_number += g_hyperframe;
-        m_frame_number = m_frame_number % g_hyperframe;
+        if (m_frame_number < 0) m_frame_number += g_max_frames;
+        m_frame_number = m_frame_number % g_max_frames;
         return *this;
     }
 
@@ -101,7 +119,7 @@ public:
     // (pat) Notice that + and - are different.
     GsmTime operator+(const GsmTime &other) const {
         std::uint32_t newTN = (m_timeslot_number + other.m_timeslot_number) % 8;
-        std::uint32_t newFN = (m_frame_number + other.m_frame_number + (m_timeslot_number + other.m_timeslot_number) / 8) % g_hyperframe;
+        std::uint32_t newFN = (m_frame_number + other.m_frame_number + (m_timeslot_number + other.m_timeslot_number) / 8) % g_max_frames;
         return GsmTime(newFN, newTN);
     }
 
@@ -176,7 +194,7 @@ public:
 
 private:
     std::uint32_t m_frame_number; // frame number in the hyperframe
-    std::uint32_t m_timeslot_number; // timeslot number
+    std::uint8_t m_timeslot_number; // timeslot number (0 to 7)
 
 };
 

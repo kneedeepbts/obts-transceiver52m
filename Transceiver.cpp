@@ -55,12 +55,12 @@ Transceiver::Transceiver(int wBasePort, const char * TRXAddress, int wSPS, GsmTi
           mControlSocket(wBasePort + 1, TRXAddress, wBasePort + 101),
           mClockSocket(wBasePort, TRXAddress, wBasePort + 100),
           mSPSTx(wSPS), mSPSRx(1), mNoises(NOISE_CNT) {
-    GsmTime startTime(random() % GsmTime::g_hyperframe, 0);
+    GsmTime startTime(random() % GsmTime::g_max_frames, 0); // FIXME: Why is this needed?  Should this use the better random generator?
 
     mRxServiceLoopThread = new Thread(32768);
     mTxServiceLoopThread = new Thread(32768);
-    mControlServiceLoopThread = new Thread(32768);       ///< thread to process control messages from GSM core
-    mTransmitPriorityQueueServiceLoopThread = new Thread(32768);///< thread to process transmit bursts from GSM core
+    mControlServiceLoopThread = new Thread(32768); // thread to process control messages from GSM core
+    mTransmitPriorityQueueServiceLoopThread = new Thread(32768); // thread to process transmit bursts from GSM core
 
     mRadioInterface = wRadioInterface;
     mTransmitLatency = wTransmitLatency;
@@ -271,6 +271,9 @@ Transceiver::CorrType Transceiver::expectedCorrType(GsmTime currTime) {
     //    return RACH;
 
     SPDLOG_DEBUG("Before Switch");
+    // FIXME: Have a similar segfault here.  Is the TN() not supposed to be
+    //        greater than eight?  If so, why are we using an uint32_t for the
+    //        TN in GsmTime?
     switch (mChanType[burstTN]) {
         case NONE:
             SPDLOG_DEBUG("case NONE");
